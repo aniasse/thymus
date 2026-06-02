@@ -1,7 +1,8 @@
+use std::collections::{HashMap, HashSet};
 use thymos_common::{MachineIdentity, NetworkEvent};
 
-const PORT_SCAN_THRESHOLD: u16 = 10;
 const KNOWN_MALICIOUS_PORTS: &[u16] = &[4444, 5555, 6666, 1234, 31337];
+const PORT_SCAN_THRESHOLD: usize = 10;
 
 pub struct InnateLayer;
 
@@ -40,35 +41,37 @@ impl Default for InnateLayer {
 }
 
 pub struct PortScanDetector {
-    connection_counts: std::collections::HashMap<String, Vec<(u16, chrono::DateTime<chrono::Utc>)>>,
+    connections: HashMap<String, Vec<(u16, chrono::DateTime<chrono::Utc>)>>,
     window_seconds: i64,
 }
 
 impl PortScanDetector {
     pub fn new(window_seconds: i64) -> Self {
         Self {
-            connection_counts: std::collections::HashMap::new(),
+            connections: HashMap::new(),
             window_seconds,
         }
     }
 
-    pub fn record_connection(
+    pub fn record(
         &mut self,
         source: &str,
         dest_port: u16,
-        timestamp: chrono::DateTime<chrono::Utc>,
+        ts: chrono::DateTime<chrono::Utc>,
     ) -> bool {
-        let entry = self
-            .connection_counts
-            .entry(source.to_string())
-            .or_default();
+        let entry = self.connections.entry(source.to_string()).or_default();
+        entry.push((dest_port, ts));
 
-        entry.push((dest_port, timestamp));
+        let cutoff = ts - chrono::Duration::seconds(self.window_seconds);
+        entry.retain(|(_, t)| *t > cutoff);
 
-        let cutoff = timestamp - chrono::Duration::seconds(self.window_seconds);
-        entry.retain(|(_, ts)| *ts > cutoff);
+        let unique: HashSet<u16> = entry.iter().map(|(p, _)| *p).collect();
+        unique.len() >= PORT_SCAN_THRESHOLD
+    }
+}
 
-        let unique_ports: std::collections::HashSet<u16> = entry.iter().map(|(p, _)| *p).collect();
-        unique_ports.len() >= PORT_SCAN_THRESHOLD as usize
+impl Default for PortScanDetector {
+    fn default() -> Self {
+        Self::new(60)
     }
 }

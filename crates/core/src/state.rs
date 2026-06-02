@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 use thymos_common::{
-    ConnectionDirection, EventBatch, MachineIdentity, Mutation, MutationStatus, NetworkEvent,
-    PeerProfile,
+    ConnectionDirection, EventBatch, MachineIdentity, Mutation, MutationDimension, MutationStatus,
+    NetworkEvent, PeerProfile,
 };
 use thymos_detection::ImmuneEngine;
+use thymos_detection::innate::PortScanDetector;
 
 use crate::profiler;
 
@@ -13,6 +14,8 @@ pub struct AppState {
     pub event_count: u64,
     pub engine: ImmuneEngine,
     pub phase: Phase,
+    pub scan_detector: PortScanDetector,
+    batches_since_save: u32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -22,18 +25,68 @@ pub enum Phase {
 }
 
 impl AppState {
-    pub fn new() -> Self {
-        Self {
-            profiles: HashMap::new(),
-            mutations: Vec::new(),
-            event_count: 0,
+    pub fn load_from_db(db: &crate::db::Db) -> Self {
+        let profiles = db.load_profiles().unwrap_or_default();
+        let mutations = db.load_mutations().unwrap_or_default();
+        let event_count = db.load_event_count().unwrap_or(0);
+        let phase = match db.load_phase().ok().flatten().as_deref() {
+            Some("active") => Phase::Active,
+            _ => Phase::Thymus,
+        };
+
+        let machine_count = profiles.len();
+        let mutation_count = mutations.len();
+
+        let state = Self {
+            profiles,
+            mutations,
+            event_count,
             engine: ImmuneEngine::new(),
-            phase: Phase::Thymus,
+            phase,
+            scan_detector: PortScanDetector::default(),
+            batches_since_save: 0,
+        };
+
+        if machine_count > 0 {
+            tracing::info!(
+                machines = machine_count,
+                mutations = mutation_count,
+                events = event_count,
+                phase = ?phase,
+                "restored state from db"
+            );
         }
+
+        state
+    }
+
+    pub fn save_to_db(&mut self, db: &crate::db::Db) {
+        if let Err(e) = db.save_profiles(&self.profiles) {
+            tracing::error!(error = %e, "failed to save profiles");
+        }
+        if let Err(e) = db.save_mutations(&self.mutations) {
+            tracing::error!(error = %e, "failed to save mutations");
+        }
+        if let Err(e) = db.save_event_count(self.event_count) {
+            tracing::error!(error = %e, "failed to save event count");
+        }
+        let phase_str = match self.phase {
+            Phase::Thymus => "thymus",
+            Phase::Active => "active",
+        };
+        if let Err(e) = db.save_phase(phase_str) {
+            tracing::error!(error = %e, "failed to save phase");
+        }
+        self.batches_since_save = 0;
+    }
+
+    pub fn should_save(&self) -> bool {
+        self.batches_since_save >= 3
     }
 
     pub fn ingest_batch(&mut self, batch: &EventBatch) {
         self.event_count += batch.event_count() as u64;
+        self.batches_since_save += 1;
 
         for event in &batch.network_events {
             let machine_id = &batch.sensor_id;
@@ -46,6 +99,28 @@ impl AppState {
             }
 
             if self.phase == Phase::Active {
+                // Check port scan
+                let is_scan =
+                    self.scan_detector
+                        .record(machine_id, event.dest_port, event.timestamp);
+
+                if is_scan {
+                    let mut mutation = Mutation::new(machine_id.clone());
+                    mutation.risk_score = 0.9;
+                    mutation.innate_score = 0.9;
+                    mutation.dimensions = vec![MutationDimension::Relational];
+                    mutation.details.push(thymos_common::MutationDetail {
+                        dimension: MutationDimension::Relational,
+                        description: format!("{machine_id} scanne plus de 10 ports en 60s"),
+                        expected_value: "< 10 ports distincts".into(),
+                        observed_value: "scan de ports détecté".into(),
+                        deviation_sigma: 5.0,
+                    });
+                    tracing::warn!(machine = %machine_id, "port scan detected");
+                    self.mutations.push(mutation);
+                }
+
+                // Normal immune detection
                 let profile = &self.profiles[machine_id];
                 if let Some(mutation) = self.engine.analyze_network_event(event, profile) {
                     tracing::warn!(

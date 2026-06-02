@@ -9,11 +9,17 @@ use std::sync::Arc;
 use thymos_common::EventBatch;
 use tokio::sync::RwLock;
 
+use crate::db::Db;
 use crate::state::{AppState, Phase};
 
-type SharedState = Arc<RwLock<AppState>>;
+#[derive(Clone)]
+pub struct CoreState {
+    pub app: Arc<RwLock<AppState>>,
+    pub db: Arc<Db>,
+}
 
-pub fn router(state: SharedState) -> Router {
+pub fn router(app: Arc<RwLock<AppState>>, db: Arc<Db>) -> Router {
+    let state = CoreState { app, db };
     Router::new()
         .route("/api/health", get(health))
         .route("/api/status", get(status))
@@ -36,8 +42,8 @@ struct StatusResponse {
     active_mutations: usize,
 }
 
-async fn status(State(state): State<SharedState>) -> Json<StatusResponse> {
-    let s = state.read().await;
+async fn status(State(state): State<CoreState>) -> Json<StatusResponse> {
+    let s = state.app.read().await;
     Json(StatusResponse {
         phase: match s.phase {
             Phase::Thymus => "thymus".to_string(),
@@ -50,12 +56,20 @@ async fn status(State(state): State<SharedState>) -> Json<StatusResponse> {
 }
 
 async fn ingest_events(
-    State(state): State<SharedState>,
+    State(state): State<CoreState>,
     Json(batch): Json<EventBatch>,
 ) -> StatusCode {
     let count = batch.event_count();
     let sensor = batch.sensor_id.clone();
-    state.write().await.ingest_batch(&batch);
+
+    let mut s = state.app.write().await;
+    s.ingest_batch(&batch);
+
+    if s.should_save() {
+        s.save_to_db(&state.db);
+    }
+
+    drop(s);
     tracing::info!(sensor = %sensor, events = count, "ingested");
     StatusCode::ACCEPTED
 }
@@ -78,8 +92,8 @@ struct DetailResponse {
     observed: String,
 }
 
-async fn list_mutations(State(state): State<SharedState>) -> Json<Vec<MutationResponse>> {
-    let s = state.read().await;
+async fn list_mutations(State(state): State<CoreState>) -> Json<Vec<MutationResponse>> {
+    let s = state.app.read().await;
     let mutations = s
         .active_mutations()
         .iter()
@@ -104,12 +118,14 @@ async fn list_mutations(State(state): State<SharedState>) -> Json<Vec<MutationRe
     Json(mutations)
 }
 
-async fn list_profiles(State(state): State<SharedState>) -> Json<serde_json::Value> {
-    let s = state.read().await;
+async fn list_profiles(State(state): State<CoreState>) -> Json<serde_json::Value> {
+    let s = state.app.read().await;
     Json(serde_json::to_value(&s.profiles).unwrap_or_default())
 }
 
-async fn activate(State(state): State<SharedState>) -> &'static str {
-    state.write().await.activate();
+async fn activate(State(state): State<CoreState>) -> &'static str {
+    let mut s = state.app.write().await;
+    s.activate();
+    s.save_to_db(&state.db);
     "activated"
 }
