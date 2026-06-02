@@ -12,9 +12,6 @@ use tracing::info;
 struct Args {
     #[arg(long, default_value = "0.0.0.0:9443")]
     listen: String,
-
-    #[arg(long, default_value = "data")]
-    data_dir: String,
 }
 
 #[tokio::main]
@@ -24,15 +21,11 @@ async fn main() -> Result<()> {
         .init();
 
     let args = Args::parse();
-
-    std::fs::create_dir_all(&args.data_dir)?;
-
-    let app_state = Arc::new(RwLock::new(state::AppState::new(&args.data_dir)?));
-
-    let app = api::router(app_state.clone());
+    let app_state = Arc::new(RwLock::new(state::AppState::new()));
+    let app = api::router(app_state);
 
     let listener = tokio::net::TcpListener::bind(&args.listen).await?;
-    info!(addr = %args.listen, "Thymos Core started");
+    info!(addr = %args.listen, "thymos-core started");
 
     axum::serve(listener, app).await?;
 

@@ -6,8 +6,8 @@ use axum::{
 };
 use serde::Serialize;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 use thymos_common::EventBatch;
+use tokio::sync::RwLock;
 
 use crate::state::{AppState, Phase};
 
@@ -34,37 +34,18 @@ struct StatusResponse {
     machines: usize,
     total_events: u64,
     active_mutations: usize,
-    profiles: Vec<ProfileSummary>,
-}
-
-#[derive(Serialize)]
-struct ProfileSummary {
-    machine_id: String,
-    hostname: String,
-    known_peers: usize,
-    maturity: f64,
 }
 
 async fn status(State(state): State<SharedState>) -> Json<StatusResponse> {
-    let state = state.read().await;
+    let s = state.read().await;
     Json(StatusResponse {
-        phase: match state.phase {
+        phase: match s.phase {
             Phase::Thymus => "thymus".to_string(),
             Phase::Active => "active".to_string(),
         },
-        machines: state.profiles.len(),
-        total_events: state.event_count,
-        active_mutations: state.active_mutations().len(),
-        profiles: state
-            .profiles
-            .values()
-            .map(|p| ProfileSummary {
-                machine_id: p.machine_id.clone(),
-                hostname: p.hostname.clone(),
-                known_peers: p.relational.known_peers.len(),
-                maturity: p.profile_maturity,
-            })
-            .collect(),
+        machines: s.profiles.len(),
+        total_events: s.event_count,
+        active_mutations: s.active_mutations().len(),
     })
 }
 
@@ -72,13 +53,10 @@ async fn ingest_events(
     State(state): State<SharedState>,
     Json(batch): Json<EventBatch>,
 ) -> StatusCode {
-    let event_count = batch.event_count();
+    let count = batch.event_count();
     let sensor = batch.sensor_id.clone();
-
-    let mut state = state.write().await;
-    state.ingest_batch(batch);
-
-    tracing::info!(sensor = %sensor, events = event_count, "Batch ingested");
+    state.write().await.ingest_batch(&batch);
+    tracing::info!(sensor = %sensor, events = count, "ingested");
     StatusCode::ACCEPTED
 }
 
@@ -101,39 +79,37 @@ struct DetailResponse {
 }
 
 async fn list_mutations(State(state): State<SharedState>) -> Json<Vec<MutationResponse>> {
-    let state = state.read().await;
-    Json(
-        state
-            .active_mutations()
-            .iter()
-            .map(|m| MutationResponse {
-                id: m.id.to_string(),
-                machine_id: m.machine_id.clone(),
-                risk_score: m.risk_score,
-                dimensions: m.dimensions.iter().map(|d| format!("{:?}", d)).collect(),
-                detected_at: m.detected_at.to_rfc3339(),
-                details: m
-                    .details
-                    .iter()
-                    .map(|d| DetailResponse {
-                        dimension: format!("{:?}", d.dimension),
-                        description: d.description.clone(),
-                        expected: d.expected_value.clone(),
-                        observed: d.observed_value.clone(),
-                    })
-                    .collect(),
-            })
-            .collect(),
-    )
+    let s = state.read().await;
+    let mutations = s
+        .active_mutations()
+        .iter()
+        .map(|m| MutationResponse {
+            id: m.id.to_string(),
+            machine_id: m.machine_id.clone(),
+            risk_score: m.risk_score,
+            dimensions: m.dimensions.iter().map(|d| format!("{d:?}")).collect(),
+            detected_at: m.detected_at.to_rfc3339(),
+            details: m
+                .details
+                .iter()
+                .map(|d| DetailResponse {
+                    dimension: format!("{:?}", d.dimension),
+                    description: d.description.clone(),
+                    expected: d.expected_value.clone(),
+                    observed: d.observed_value.clone(),
+                })
+                .collect(),
+        })
+        .collect();
+    Json(mutations)
 }
 
 async fn list_profiles(State(state): State<SharedState>) -> Json<serde_json::Value> {
-    let state = state.read().await;
-    Json(serde_json::to_value(&state.profiles).unwrap_or_default())
+    let s = state.read().await;
+    Json(serde_json::to_value(&s.profiles).unwrap_or_default())
 }
 
 async fn activate(State(state): State<SharedState>) -> &'static str {
-    let mut state = state.write().await;
-    state.activate();
-    "Immune detection activated"
+    state.write().await.activate();
+    "activated"
 }

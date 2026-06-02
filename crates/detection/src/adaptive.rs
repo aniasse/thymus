@@ -8,9 +8,9 @@ impl AdaptiveLayer {
     }
 
     pub fn evaluate_network(&self, event: &NetworkEvent, profile: &MachineIdentity) -> f64 {
-        let relational = self.score_relational(event, profile);
-        let temporal = self.score_temporal(event, profile);
-        let volumetric = self.score_volumetric(event, profile);
+        let relational = Self::score_relational(event, profile);
+        let temporal = Self::score_temporal(event, profile);
+        let volumetric = Self::score_volumetric(event, profile);
 
         let weighted = relational * 0.4 + volumetric * 0.35 + temporal * 0.25;
         let max_single = relational.max(volumetric).max(temporal);
@@ -18,7 +18,7 @@ impl AdaptiveLayer {
         weighted.max(max_single * 0.9)
     }
 
-    fn score_relational(&self, event: &NetworkEvent, profile: &MachineIdentity) -> f64 {
+    fn score_relational(event: &NetworkEvent, profile: &MachineIdentity) -> f64 {
         if !profile.is_known_peer(&event.dest_ip) {
             return 0.8;
         }
@@ -29,17 +29,22 @@ impl AdaptiveLayer {
             .iter()
             .find(|p| p.peer_ip == event.dest_ip);
 
-        if let Some(peer) = peer {
-            if !peer.ports.contains(&event.dest_port) {
-                return 0.4;
-            }
+        if let Some(peer) = peer
+            && !peer.ports.contains(&event.dest_port)
+        {
+            return 0.4;
         }
 
         0.0
     }
 
-    fn score_temporal(&self, event: &NetworkEvent, profile: &MachineIdentity) -> f64 {
-        let hour = event.timestamp.format("%H").to_string().parse::<u8>().unwrap_or(0);
+    fn score_temporal(event: &NetworkEvent, profile: &MachineIdentity) -> f64 {
+        let hour = event
+            .timestamp
+            .format("%H")
+            .to_string()
+            .parse::<u8>()
+            .unwrap_or(0);
 
         if !profile.is_within_active_hours(hour) {
             return 0.6;
@@ -48,7 +53,8 @@ impl AdaptiveLayer {
         0.0
     }
 
-    fn score_volumetric(&self, event: &NetworkEvent, profile: &MachineIdentity) -> f64 {
+    #[allow(clippy::cast_precision_loss)]
+    fn score_volumetric(event: &NetworkEvent, profile: &MachineIdentity) -> f64 {
         let avg = profile.temporal.avg_daily_volume;
         if avg == 0 {
             return 0.0;

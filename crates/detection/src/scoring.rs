@@ -10,11 +10,12 @@ pub fn combine_scores(innate: f64, adaptive: f64) -> f64 {
     }
 }
 
+#[allow(clippy::cast_precision_loss)]
 pub fn build_details(
     event: &NetworkEvent,
     profile: &MachineIdentity,
     innate_score: f64,
-    adaptive_score: f64,
+    _adaptive_score: f64,
 ) -> Vec<MutationDetail> {
     let mut details = Vec::new();
 
@@ -25,28 +26,30 @@ pub fn build_details(
                 "{} a contacté {} pour la première fois",
                 profile.hostname, event.dest_ip
             ),
-            expected_value: format!(
-                "{} pairs connus",
-                profile.relational.known_peers.len()
-            ),
+            expected_value: format!("{} pairs connus", profile.relational.known_peers.len()),
             observed_value: format!("nouvelle destination {}", event.dest_ip),
-            deviation_sigma: adaptive_score * 5.0,
+            deviation_sigma: innate_score * 5.0,
         });
     }
 
-    let hour = event.timestamp.format("%H").to_string().parse::<u8>().unwrap_or(0);
+    let hour = event
+        .timestamp
+        .format("%H")
+        .to_string()
+        .parse::<u8>()
+        .unwrap_or(0);
     if !profile.is_within_active_hours(hour) {
         details.push(MutationDetail {
             dimension: MutationDimension::Temporal,
             description: format!(
-                "Activité à {}h, hors plage habituelle ({}-{}h)",
-                hour, profile.temporal.active_hour_start, profile.temporal.active_hour_end
+                "Activité à {hour}h, hors plage habituelle ({}-{}h)",
+                profile.temporal.active_hour_start, profile.temporal.active_hour_end
             ),
             expected_value: format!(
                 "{}h-{}h",
                 profile.temporal.active_hour_start, profile.temporal.active_hour_end
             ),
-            observed_value: format!("{}h", hour),
+            observed_value: format!("{hour}h"),
             deviation_sigma: 3.0,
         });
     }
@@ -57,12 +60,9 @@ pub fn build_details(
         let ratio = total as f64 / avg as f64;
         details.push(MutationDetail {
             dimension: MutationDimension::Volumetric,
-            description: format!(
-                "Volume transféré {:.1}x supérieur à la moyenne",
-                ratio
-            ),
-            expected_value: format!("{} octets/jour", avg),
-            observed_value: format!("{} octets", total),
+            description: format!("Volume transféré {ratio:.1}x supérieur à la moyenne"),
+            expected_value: format!("{avg} octets/jour"),
+            observed_value: format!("{total} octets"),
             deviation_sigma: ratio,
         });
     }
@@ -75,7 +75,7 @@ pub fn build_details(
                 event.dest_port, event.process_name
             ),
             expected_value: "aucun indicateur inné".to_string(),
-            observed_value: format!("score inné {:.2}", innate_score),
+            observed_value: format!("score inné {innate_score:.2}"),
             deviation_sigma: innate_score * 5.0,
         });
     }
@@ -93,7 +93,12 @@ pub fn affected_dimensions(
         dims.push(MutationDimension::Relational);
     }
 
-    let hour = event.timestamp.format("%H").to_string().parse::<u8>().unwrap_or(0);
+    let hour = event
+        .timestamp
+        .format("%H")
+        .to_string()
+        .parse::<u8>()
+        .unwrap_or(0);
     if !profile.is_within_active_hours(hour) {
         dims.push(MutationDimension::Temporal);
     }

@@ -52,8 +52,14 @@ impl PortScanDetector {
         }
     }
 
-    pub fn record_connection(&mut self, source: &str, dest_port: u16, timestamp: chrono::DateTime<chrono::Utc>) -> bool {
-        let entry = self.connection_counts
+    pub fn record_connection(
+        &mut self,
+        source: &str,
+        dest_port: u16,
+        timestamp: chrono::DateTime<chrono::Utc>,
+    ) -> bool {
+        let entry = self
+            .connection_counts
             .entry(source.to_string())
             .or_default();
 

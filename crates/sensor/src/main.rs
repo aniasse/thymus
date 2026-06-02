@@ -1,10 +1,10 @@
-mod collector;
 mod buffer;
+mod collector;
 
 use anyhow::Result;
 use clap::Parser;
 use std::time::Duration;
-use tracing::{info, warn};
+use tracing::info;
 
 #[derive(Parser)]
 #[command(name = "thymos-sensor", about = "Thymos network immune sensor")]
@@ -26,50 +26,34 @@ async fn main() -> Result<()> {
         .init();
 
     let args = Args::parse();
-    let sensor_id = args
-        .sensor_id
-        .unwrap_or_else(|| gethostname().unwrap_or_else(|| "unknown".into()));
+    let sensor_id = args.sensor_id.unwrap_or_else(|| {
+        std::fs::read_to_string("/etc/hostname")
+            .unwrap_or_else(|_| "unknown".into())
+            .trim()
+            .to_string()
+    });
 
-    info!(sensor_id = %sensor_id, core = %args.core_addr, "Thymos Sensor starting");
+    info!(sensor_id = %sensor_id, core = %args.core_addr, "starting");
 
-    let mut buffer = buffer::EventBuffer::new(sensor_id.clone(), 10_000);
-    let collector = collector::NetworkCollector::new()?;
+    let mut buffer = buffer::EventBuffer::new(sensor_id, 10_000);
+    let collector = collector::NetworkCollector::new();
     let interval = Duration::from_secs(args.collect_interval_secs);
 
-    info!("Entering collection loop (interval: {}s)", args.collect_interval_secs);
-
     loop {
-        match collector.collect_connections() {
-            Ok(events) => {
-                let count = events.len();
-                for event in events {
-                    buffer.push_network(event);
-                }
-                if count > 0 {
-                    info!(count, "Collected network events");
-                }
-            }
-            Err(e) => {
-                warn!(error = %e, "Failed to collect network events");
-            }
+        let events = collector.collect_connections();
+        let count = events.len();
+        for event in events {
+            buffer.push_network(event);
+        }
+        if count > 0 {
+            info!(count, "collected network events");
         }
 
         if let Some(batch) = buffer.take_batch() {
-            let event_count = batch.event_count();
-            info!(events = event_count, "Batch ready to send to core");
-            // TODO: send via gRPC to core
-            // For now, log the batch as JSON
-            if let Ok(json) = serde_json::to_string_pretty(&batch) {
-                tracing::debug!(batch = %json);
-            }
+            info!(events = batch.event_count(), "batch ready");
+            // TODO: POST to core_addr/api/events
         }
 
         tokio::time::sleep(interval).await;
     }
-}
-
-fn gethostname() -> Option<String> {
-    std::fs::read_to_string("/etc/hostname")
-        .ok()
-        .map(|s| s.trim().to_string())
 }

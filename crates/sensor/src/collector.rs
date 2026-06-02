@@ -1,4 +1,3 @@
-use anyhow::Result;
 use chrono::Utc;
 use std::net::IpAddr;
 use thymos_common::{NetworkEvent, Protocol};
@@ -9,61 +8,53 @@ pub struct NetworkCollector {
 }
 
 impl NetworkCollector {
-    pub fn new() -> Result<Self> {
+    pub fn new() -> Self {
         let sensor_id = std::fs::read_to_string("/etc/hostname")
             .unwrap_or_else(|_| "unknown".into())
             .trim()
             .to_string();
 
-        Ok(Self { sensor_id })
+        Self { sensor_id }
     }
 
-    pub fn collect_connections(&self) -> Result<Vec<NetworkEvent>> {
+    pub fn collect_connections(&self) -> Vec<NetworkEvent> {
         let mut events = Vec::new();
 
-        if let Ok(tcp_entries) = self.read_proc_net("tcp") {
-            events.extend(tcp_entries);
-        }
-        if let Ok(tcp6_entries) = self.read_proc_net("tcp6") {
-            events.extend(tcp6_entries);
-        }
-        if let Ok(udp_entries) = self.read_proc_net_udp("udp") {
-            events.extend(udp_entries);
-        }
-
-        Ok(events)
-    }
-
-    fn read_proc_net(&self, proto: &str) -> Result<Vec<NetworkEvent>> {
-        let path = format!("/proc/net/{}", proto);
-        let content = std::fs::read_to_string(&path)?;
-        let mut events = Vec::new();
-
-        for line in content.lines().skip(1) {
-            if let Some(event) = self.parse_tcp_line(line) {
-                events.push(event);
+        for proto in &["tcp", "tcp6"] {
+            if let Some(entries) = self.read_proc_net_tcp(proto) {
+                events.extend(entries);
             }
         }
 
-        Ok(events)
-    }
-
-    fn read_proc_net_udp(&self, proto: &str) -> Result<Vec<NetworkEvent>> {
-        let path = format!("/proc/net/{}", proto);
-        let content = std::fs::read_to_string(&path)?;
-        let mut events = Vec::new();
-
-        for line in content.lines().skip(1) {
-            if let Some(mut event) = self.parse_tcp_line(line) {
-                event.protocol = Protocol::Udp;
-                events.push(event);
-            }
+        if let Some(entries) = self.read_proc_net_udp() {
+            events.extend(entries);
         }
 
-        Ok(events)
+        events
     }
 
-    fn parse_tcp_line(&self, line: &str) -> Option<NetworkEvent> {
+    fn read_proc_net_tcp(&self, proto: &str) -> Option<Vec<NetworkEvent>> {
+        let path = format!("/proc/net/{proto}");
+        let content = std::fs::read_to_string(path).ok()?;
+        let events = content
+            .lines()
+            .skip(1)
+            .filter_map(|line| self.parse_proc_line(line, Protocol::Tcp))
+            .collect();
+        Some(events)
+    }
+
+    fn read_proc_net_udp(&self) -> Option<Vec<NetworkEvent>> {
+        let content = std::fs::read_to_string("/proc/net/udp").ok()?;
+        let events = content
+            .lines()
+            .skip(1)
+            .filter_map(|line| self.parse_proc_line(line, Protocol::Udp))
+            .collect();
+        Some(events)
+    }
+
+    fn parse_proc_line(&self, line: &str, protocol: Protocol) -> Option<NetworkEvent> {
         let fields: Vec<&str> = line.split_whitespace().collect();
         if fields.len() < 10 {
             return None;
@@ -71,19 +62,17 @@ impl NetworkCollector {
 
         let local = parse_addr_port(fields[1])?;
         let remote = parse_addr_port(fields[2])?;
-        let state = u8::from_str_radix(fields[3], 16).ok()?;
 
-        // Only ESTABLISHED connections (state 01)
-        if state != 0x01 {
-            return None;
+        if protocol == Protocol::Tcp {
+            let state = u8::from_str_radix(fields[3], 16).ok()?;
+            if state != 0x01 {
+                return None;
+            }
         }
 
-        // Skip loopback
         if local.0.is_loopback() || remote.0.is_loopback() {
             return None;
         }
-
-        let uid = fields.get(7).and_then(|s| s.parse::<u32>().ok()).unwrap_or(0);
 
         Some(NetworkEvent {
             id: Uuid::new_v4(),
@@ -93,31 +82,24 @@ impl NetworkCollector {
             source_port: local.1,
             dest_ip: remote.0,
             dest_port: remote.1,
-            protocol: Protocol::Tcp,
+            protocol,
             bytes_sent: 0,
             bytes_recv: 0,
             process_pid: 0,
             process_name: String::new(),
-            process_user: uid.to_string(),
+            process_user: fields.get(7).unwrap_or(&"0").to_string(),
         })
     }
 }
 
 fn parse_addr_port(s: &str) -> Option<(IpAddr, u16)> {
-    let parts: Vec<&str> = s.split(':').collect();
-    if parts.len() != 2 {
-        return None;
-    }
+    let (addr_hex, port_hex) = s.split_once(':')?;
+    let port = u16::from_str_radix(port_hex, 16).ok()?;
 
-    let port = u16::from_str_radix(parts[1], 16).ok()?;
-
-    let ip = if parts[0].len() == 8 {
-        // IPv4 in hex, little-endian
-        let ip_num = u32::from_str_radix(parts[0], 16).ok()?;
-        IpAddr::V4(std::net::Ipv4Addr::from(ip_num.to_be()))
+    if addr_hex.len() == 8 {
+        let ip_num = u32::from_str_radix(addr_hex, 16).ok()?;
+        Some((IpAddr::V4(std::net::Ipv4Addr::from(ip_num.to_be())), port))
     } else {
-        return None;
-    };
-
-    Some((ip, port))
+        None
+    }
 }

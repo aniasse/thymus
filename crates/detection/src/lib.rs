@@ -1,5 +1,5 @@
-pub mod innate;
 pub mod adaptive;
+pub mod innate;
 pub mod scoring;
 
 use thymos_common::{MachineIdentity, Mutation, NetworkEvent};
