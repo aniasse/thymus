@@ -1,4 +1,3 @@
-#[cfg(test)]
 mod tests {
     use chrono::Utc;
     use std::net::{IpAddr, Ipv4Addr};

@@ -1,5 +1,6 @@
 mod buffer;
 mod collector;
+mod procinfo;
 mod sender;
 
 use anyhow::Result;

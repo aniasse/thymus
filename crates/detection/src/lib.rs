@@ -1,7 +1,8 @@
 pub mod adaptive;
+#[cfg(test)]
+mod engine_tests;
 pub mod innate;
 pub mod scoring;
-mod tests;
 
 use thymos_common::{MachineIdentity, Mutation, NetworkEvent};
 

@@ -1,4 +1,5 @@
 mod api;
+mod profiler;
 mod state;
 
 use anyhow::Result;

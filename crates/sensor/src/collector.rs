@@ -3,6 +3,8 @@ use std::net::IpAddr;
 use thymos_common::{NetworkEvent, Protocol};
 use uuid::Uuid;
 
+use crate::procinfo;
+
 pub struct NetworkCollector {
     sensor_id: String,
 }
@@ -18,43 +20,56 @@ impl NetworkCollector {
     }
 
     pub fn collect_connections(&self) -> Vec<NetworkEvent> {
+        let socket_map = procinfo::build_socket_to_pid_map();
         let mut events = Vec::new();
 
         for proto in &["tcp", "tcp6"] {
-            if let Some(entries) = self.read_proc_net_tcp(proto) {
+            if let Some(entries) = self.read_proc_net_tcp(proto, &socket_map) {
                 events.extend(entries);
             }
         }
 
-        if let Some(entries) = self.read_proc_net_udp() {
+        if let Some(entries) = self.read_proc_net_udp(&socket_map) {
             events.extend(entries);
         }
 
         events
     }
 
-    fn read_proc_net_tcp(&self, proto: &str) -> Option<Vec<NetworkEvent>> {
+    fn read_proc_net_tcp(
+        &self,
+        proto: &str,
+        socket_map: &std::collections::HashMap<(IpAddr, u16), u32>,
+    ) -> Option<Vec<NetworkEvent>> {
         let path = format!("/proc/net/{proto}");
         let content = std::fs::read_to_string(path).ok()?;
         let events = content
             .lines()
             .skip(1)
-            .filter_map(|line| self.parse_proc_line(line, Protocol::Tcp))
+            .filter_map(|line| self.parse_proc_line(line, Protocol::Tcp, socket_map))
             .collect();
         Some(events)
     }
 
-    fn read_proc_net_udp(&self) -> Option<Vec<NetworkEvent>> {
+    fn read_proc_net_udp(
+        &self,
+        socket_map: &std::collections::HashMap<(IpAddr, u16), u32>,
+    ) -> Option<Vec<NetworkEvent>> {
         let content = std::fs::read_to_string("/proc/net/udp").ok()?;
         let events = content
             .lines()
             .skip(1)
-            .filter_map(|line| self.parse_proc_line(line, Protocol::Udp))
+            .filter_map(|line| self.parse_proc_line(line, Protocol::Udp, socket_map))
             .collect();
         Some(events)
     }
 
-    fn parse_proc_line(&self, line: &str, protocol: Protocol) -> Option<NetworkEvent> {
+    fn parse_proc_line(
+        &self,
+        line: &str,
+        protocol: Protocol,
+        socket_map: &std::collections::HashMap<(IpAddr, u16), u32>,
+    ) -> Option<NetworkEvent> {
         let fields: Vec<&str> = line.split_whitespace().collect();
         if fields.len() < 10 {
             return None;
@@ -74,6 +89,17 @@ impl NetworkCollector {
             return None;
         }
 
+        let (pid, process_name, process_user) =
+            if let Some(&pid) = socket_map.get(&(local.0, local.1)) {
+                if let Some(info) = procinfo::get_process_info(pid) {
+                    (pid, info.name, info.user)
+                } else {
+                    (pid, String::new(), String::new())
+                }
+            } else {
+                (0, String::new(), String::new())
+            };
+
         Some(NetworkEvent {
             id: Uuid::new_v4(),
             timestamp: Utc::now(),
@@ -85,9 +111,9 @@ impl NetworkCollector {
             protocol,
             bytes_sent: 0,
             bytes_recv: 0,
-            process_pid: 0,
-            process_name: String::new(),
-            process_user: fields.get(7).unwrap_or(&"0").to_string(),
+            process_pid: pid,
+            process_name,
+            process_user,
         })
     }
 }

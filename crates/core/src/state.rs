@@ -5,6 +5,8 @@ use thymos_common::{
 };
 use thymos_detection::ImmuneEngine;
 
+use crate::profiler;
+
 pub struct AppState {
     pub profiles: HashMap<String, MachineIdentity>,
     pub mutations: Vec<Mutation>,
@@ -57,6 +59,10 @@ impl AppState {
 
             self.update_profile(machine_id, event);
         }
+
+        if self.phase == Phase::Thymus {
+            self.check_auto_activate();
+        }
     }
 
     fn update_profile(&mut self, machine_id: &str, event: &NetworkEvent) {
@@ -93,7 +99,19 @@ impl AppState {
             });
         }
 
+        profiler::update_temporal_stats(profile, event);
+        profiler::update_observation_days(profile);
+        profiler::update_active_hours(profile);
+        profiler::compute_maturity(profile);
+
         profile.last_updated = event.timestamp;
+    }
+
+    fn check_auto_activate(&mut self) {
+        if profiler::should_auto_activate(&self.profiles) {
+            tracing::info!("all profiles mature — auto-activating immune detection");
+            self.phase = Phase::Active;
+        }
     }
 
     pub fn activate(&mut self) {
