@@ -1,0 +1,23 @@
+[package]
+name = "thymos-core"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "thymos-core"
+path = "src/main.rs"
+
+[dependencies]
+thymos-common = { workspace = true }
+thymos-detection = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+anyhow = { workspace = true }
+clap = { workspace = true }
+axum = "0.8"
+tower-http = { version = "0.6", features = ["cors", "fs"] }
