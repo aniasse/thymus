@@ -1,10 +1,11 @@
 mod buffer;
 mod collector;
+mod sender;
 
 use anyhow::Result;
 use clap::Parser;
 use std::time::Duration;
-use tracing::info;
+use tracing::{info, warn};
 
 #[derive(Parser)]
 #[command(name = "thymos-sensor", about = "Thymos network immune sensor")]
@@ -13,7 +14,7 @@ struct Args {
     core_addr: String,
 
     #[arg(long, default_value = "10")]
-    collect_interval_secs: u64,
+    interval: u64,
 
     #[arg(long)]
     sensor_id: Option<String>,
@@ -33,11 +34,12 @@ async fn main() -> Result<()> {
             .to_string()
     });
 
-    info!(sensor_id = %sensor_id, core = %args.core_addr, "starting");
+    info!(id = %sensor_id, core = %args.core_addr, "starting");
 
     let mut buffer = buffer::EventBuffer::new(sensor_id, 10_000);
     let collector = collector::NetworkCollector::new();
-    let interval = Duration::from_secs(args.collect_interval_secs);
+    let sender = sender::CoreSender::new(&args.core_addr);
+    let interval = Duration::from_secs(args.interval);
 
     loop {
         let events = collector.collect_connections();
@@ -45,13 +47,14 @@ async fn main() -> Result<()> {
         for event in events {
             buffer.push_network(event);
         }
-        if count > 0 {
-            info!(count, "collected network events");
-        }
 
-        if let Some(batch) = buffer.take_batch() {
-            info!(events = batch.event_count(), "batch ready");
-            // TODO: POST to core_addr/api/events
+        if let Some(batch) = buffer.take_batch()
+            && let Err(e) = sender.send_batch(&batch).await
+        {
+            warn!(error = %e, events = count, "core unreachable, buffering");
+            for event in batch.network_events {
+                buffer.push_network(event);
+            }
         }
 
         tokio::time::sleep(interval).await;
