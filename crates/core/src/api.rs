@@ -4,9 +4,9 @@ use axum::{
     http::StatusCode,
     routing::{get, post},
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use thymos_common::{EventBatch, MutationStatus};
+use thymos_common::{EventBatch, MutationStatus, ToleranceContext, ToleranceEntry};
 use tokio::sync::RwLock;
 
 use crate::db::Db;
@@ -32,6 +32,8 @@ pub fn router(app: Arc<RwLock<AppState>>, db: Arc<Db>) -> Router {
         )
         .route("/api/profiles", get(list_profiles))
         .route("/api/chains", get(list_chains))
+        .route("/api/tolerances", get(list_tolerances))
+        .route("/api/context", post(add_context))
         .route("/api/activate", post(activate))
         .with_state(state)
 }
@@ -142,12 +144,59 @@ async fn false_positive_mutation(
     Path(id): Path<String>,
 ) -> StatusCode {
     let mut s = state.app.write().await;
-    if let Some(m) = s.mutations.iter_mut().find(|m| m.id.to_string() == id) {
-        m.status = MutationStatus::FalsePositive;
+    let idx = s.mutations.iter().position(|m| m.id.to_string() == id);
+    if let Some(idx) = idx {
+        s.mutations[idx].status = MutationStatus::FalsePositive;
+        let m = &s.mutations[idx];
+        let dest_ip = m
+            .details
+            .first()
+            .and_then(|d| d.observed_value.split_whitespace().last())
+            .map(String::from);
+        let tolerance = ToleranceEntry::from_false_positive(
+            &m.machine_id,
+            m.dimensions.clone(),
+            m.risk_score,
+            dest_ip,
+            None,
+        );
+        tracing::info!(tolerance_id = %tolerance.id, "tolerance created from false positive");
+        s.tolerances.push(tolerance);
         StatusCode::OK
     } else {
         StatusCode::NOT_FOUND
     }
+}
+
+async fn list_tolerances(State(state): State<CoreState>) -> Json<serde_json::Value> {
+    let s = state.app.read().await;
+    Json(serde_json::to_value(&s.tolerances).unwrap_or_default())
+}
+
+#[derive(Deserialize)]
+struct ContextRequest {
+    context_type: String,
+    affected_machines: Vec<String>,
+    duration_hours: u64,
+    description: String,
+}
+
+async fn add_context(
+    State(state): State<CoreState>,
+    Json(req): Json<ContextRequest>,
+) -> StatusCode {
+    let mut s = state.app.write().await;
+    let ctx = ToleranceContext {
+        id: uuid::Uuid::new_v4(),
+        context_type: req.context_type,
+        affected_machines: req.affected_machines,
+        start: chrono::Utc::now(),
+        end: chrono::Utc::now() + chrono::Duration::hours(req.duration_hours as i64),
+        description: req.description,
+    };
+    tracing::info!(context = %ctx.context_type, hours = req.duration_hours, "context declared");
+    s.contexts.push(ctx);
+    StatusCode::CREATED
 }
 
 async fn list_profiles(State(state): State<CoreState>) -> Json<serde_json::Value> {

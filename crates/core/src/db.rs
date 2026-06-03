@@ -5,7 +5,7 @@ use std::path::Path;
 use std::sync::Mutex;
 use thymos_common::{
     ConnectionDirection, MachineIdentity, MemoryCell, Mutation, MutationStatus, PeerProfile,
-    ResponseAction,
+    ResponseAction, ToleranceEntry,
 };
 
 pub struct Db {
@@ -62,6 +62,10 @@ impl Db {
             CREATE TABLE IF NOT EXISTS memory_cells (
                 id TEXT PRIMARY KEY,
                 created_at TEXT NOT NULL,
+                data TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS tolerances (
+                id TEXT PRIMARY KEY,
                 data TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS meta (
@@ -364,5 +368,33 @@ impl Db {
             .filter_map(|data| serde_json::from_str(&data).ok())
             .collect();
         Ok(cells)
+    }
+
+    pub fn save_tolerances(&self, tolerances: &[ToleranceEntry]) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        let tx = conn.unchecked_transaction()?;
+        tx.execute("DELETE FROM tolerances", [])?;
+
+        for t in tolerances {
+            let data = serde_json::to_string(t)?;
+            tx.execute(
+                "INSERT INTO tolerances (id, data) VALUES (?1, ?2)",
+                rusqlite::params![t.id.to_string(), data],
+            )?;
+        }
+
+        tx.commit()?;
+        Ok(())
+    }
+
+    pub fn load_tolerances(&self) -> Result<Vec<ToleranceEntry>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT data FROM tolerances")?;
+        let entries = stmt
+            .query_map([], |row| row.get::<_, String>(0))?
+            .flatten()
+            .filter_map(|data| serde_json::from_str(&data).ok())
+            .collect();
+        Ok(entries)
     }
 }

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use thymos_common::{
     ConnectionDirection, EventBatch, LateralChain, MachineIdentity, Mutation, MutationDimension,
-    MutationStatus, NetworkEvent, PeerProfile,
+    MutationStatus, NetworkEvent, PeerProfile, ToleranceContext, ToleranceEntry,
 };
 use thymos_detection::ImmuneEngine;
 use thymos_detection::innate::PortScanDetector;
@@ -14,6 +14,8 @@ pub struct AppState {
     pub profiles: HashMap<String, MachineIdentity>,
     pub mutations: Vec<Mutation>,
     pub chains: Vec<LateralChain>,
+    pub tolerances: Vec<ToleranceEntry>,
+    pub contexts: Vec<ToleranceContext>,
     pub event_count: u64,
     pub engine: ImmuneEngine,
     pub memory: ImmuneMemory,
@@ -45,10 +47,14 @@ impl AppState {
         let memory_cells = db.load_memory_cells().unwrap_or_default();
         let cell_count = memory_cells.len();
 
+        let tolerances = db.load_tolerances().unwrap_or_default();
+
         let state = Self {
             profiles,
             mutations,
             chains: Vec::new(),
+            tolerances,
+            contexts: Vec::new(),
             event_count,
             engine: ImmuneEngine::new(),
             memory: ImmuneMemory::load(memory_cells),
@@ -91,6 +97,9 @@ impl AppState {
         }
         if let Err(e) = db.save_memory_cells(self.memory.cells()) {
             tracing::error!(error = %e, "failed to save memory cells");
+        }
+        if let Err(e) = db.save_tolerances(&self.tolerances) {
+            tracing::error!(error = %e, "failed to save tolerances");
         }
         self.batches_since_save = 0;
     }
@@ -138,6 +147,37 @@ impl AppState {
                 // Normal immune detection
                 let profile = &self.profiles[machine_id];
                 if let Some(mut mutation) = self.engine.analyze_network_event(event, profile) {
+                    // Check tolerance (immune tolerance)
+                    let dest_ip_str = event.dest_ip.to_string();
+                    let is_tolerated = self.tolerances.iter_mut().any(|t| {
+                        let m = t.matches(
+                            machine_id,
+                            &mutation.dimensions,
+                            mutation.risk_score,
+                            Some(&dest_ip_str),
+                        );
+                        if m {
+                            t.hits += 1;
+                        }
+                        m
+                    });
+
+                    if is_tolerated {
+                        continue;
+                    }
+
+                    // Check active contexts
+                    let in_context = self
+                        .contexts
+                        .iter()
+                        .any(|ctx| ctx.is_active() && ctx.affects_machine(machine_id));
+                    if in_context {
+                        mutation.risk_score *= 0.5;
+                        if mutation.risk_score < 0.4 {
+                            continue;
+                        }
+                    }
+
                     // Consult immune memory for accelerated response
                     if let Some(mem_match) = self.memory.consult(&mutation) {
                         tracing::info!(
