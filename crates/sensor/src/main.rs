@@ -1,16 +1,22 @@
 mod buffer;
-mod capture;
 mod collector;
-mod flows;
-mod procinfo;
 mod sender;
+
+// Passive capture (pnet) links a packet-capture lib unavailable by default on
+// Windows; gate it (and its deps) to non-Windows platforms for now.
+#[cfg(not(windows))]
+mod capture;
+#[cfg(not(windows))]
+mod flows;
+
+// Host-mode process enrichment reads /proc; Linux only.
+#[cfg(target_os = "linux")]
+mod procinfo;
 
 use anyhow::Result;
 use clap::Parser;
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use thymos_common::EventBatch;
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 
 #[derive(Parser)]
 #[command(name = "thymos-sensor", about = "Thymos network immune sensor")]
@@ -49,9 +55,22 @@ async fn main() -> Result<()> {
 
     let sender = sender::CoreSender::new(&args.core_addr, args.token.clone());
 
-    if let Some(ref iface) = args.interface {
-        info!(id = %sensor_id, core = %args.core_addr, interface = %iface, "starting (passive mode)");
-        run_passive(iface.clone(), sensor_id, sender, args.interval).await
+    if let Some(iface) = args.interface.clone() {
+        #[cfg(not(windows))]
+        {
+            info!(id = %sensor_id, core = %args.core_addr, interface = %iface, "starting (passive mode)");
+            run_passive(iface, sensor_id, sender, args.interval).await
+        }
+        // On Windows we return an error value (not `bail!`) so this branch does
+        // not diverge — keeping the `else` meaningful for the clippy lints that
+        // run per-target.
+        #[cfg(windows)]
+        {
+            let _ = iface;
+            Err(anyhow::anyhow!(
+                "passive mode (--interface) is not yet supported on Windows; use host mode"
+            ))
+        }
     } else {
         info!(id = %sensor_id, core = %args.core_addr, "starting (host mode)");
         run_host(sensor_id, sender, args.interval).await
@@ -83,12 +102,15 @@ async fn run_host(sensor_id: String, sender: sender::CoreSender, interval: u64) 
     }
 }
 
+#[cfg(not(windows))]
 async fn run_passive(
     iface: String,
     sensor_id: String,
     sender: sender::CoreSender,
     interval: u64,
 ) -> Result<()> {
+    use std::sync::{Arc, Mutex};
+
     let aggregator = Arc::new(Mutex::new(flows::FlowAggregator::new(
         sensor_id.clone(),
         15,
@@ -102,7 +124,7 @@ async fn run_passive(
         let mut receiver = match capture::open(&iface) {
             Ok(r) => r,
             Err(e) => {
-                error!(error = %e, "failed to open capture interface (need root/CAP_NET_RAW?)");
+                tracing::error!(error = %e, "failed to open capture interface (need root/CAP_NET_RAW?)");
                 return;
             }
         };
@@ -156,11 +178,14 @@ async fn run_passive(
     }
 }
 
+#[cfg(not(windows))]
 async fn send_passive(
     sender: &sender::CoreSender,
     sensor_id: &str,
     events: Vec<thymos_common::NetworkEvent>,
 ) {
+    use thymos_common::EventBatch;
+
     if events.is_empty() {
         return;
     }

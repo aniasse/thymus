@@ -42,12 +42,20 @@ curl http://localhost:9443/api/status
 
 ### Mode hôte (agent, par défaut)
 
-L'agent est installé sur une machine et lit `/proc/net` + `/proc/{pid}`. Il voit les
-connexions et les processus de cette machine. Idéal pour serveurs et postes Linux.
+L'agent est installé sur une machine et observe ses connexions via la facilité
+native de la plateforme :
+
+- **Linux** : lecture de `/proc/net` + enrichissement processus via `/proc/{pid}`
+- **Windows** : ETW (Event Tracing for Windows), provider noyau TCP/IP — nécessite
+  les droits Administrateur
+- Autres plateformes : mode hôte non supporté (utiliser le mode passif)
 
 ```bash
 ./target/release/thymos-sensor --core-addr http://CORE_IP:9443
 ```
+
+> L'agent Windows (ETW) est compilé et vérifié en CI (job `windows-latest`). Le
+> test terrain sur un vrai poste Windows reste à valider.
 
 ### Mode passif (sans agent)
 
@@ -56,7 +64,7 @@ Un seul sensor branché sur un **port miroir (SPAN)** d'un switch capture les fl
 imprimantes réseau, caméras IP, équipements IoT, automates, terminaux de paiement.
 
 ```bash
-# Nécessite root / CAP_NET_RAW
+# Nécessite root / CAP_NET_RAW (Linux/macOS ; pas encore supporté sur Windows)
 sudo ./target/release/thymos-sensor --interface eth0 --core-addr http://CORE_IP:9443
 ```
 

@@ -20,8 +20,16 @@ chrono = { workspace = true }
 anyhow = { workspace = true }
 clap = { workspace = true }
 reqwest = { version = "0.12", features = ["json"] }
+
+# Passive capture (packet sniffing) — not built on Windows, where it would
+# require the Npcap SDK to link.
+[target.'cfg(not(windows))'.dependencies]
 pnet_datalink = "0.35"
 pnet_packet = "0.35"
+
+# Windows host-mode collection via ETW.
+[target.'cfg(windows)'.dependencies]
+ferrisetw = "1.1"
 
 [lints]
 workspace = true
