@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Status{% endblock %}
+{% block nav_status %}class="active"{% endblock %}
+
+{% block content %}
+<h1>État de l'organisme</h1>
+
+<div id="status-cards" hx-get="/partials/status-cards" hx-trigger="load, every 5s" hx-swap="innerHTML">
+</div>
+
+<div class="flex gap-2" style="flex-wrap: wrap;">
+    <div class="panel" style="flex: 1; min-width: 300px;">
+        <div class="panel-title">Profils machines</div>
+        <div id="profiles-table" hx-get="/partials/profiles-summary" hx-trigger="load, every 10s" hx-swap="innerHTML">
+        </div>
+    </div>
+
+    <div class="panel" style="flex: 1; min-width: 300px;">
+        <div class="panel-title">Mutations récentes</div>
+        <div id="recent-mutations" hx-get="/partials/recent-mutations" hx-trigger="load, every 5s" hx-swap="innerHTML">
+        </div>
+    </div>
+</div>
+{% endblock %}

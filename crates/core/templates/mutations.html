@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Mutations{% endblock %}
+{% block nav_mutations %}class="active"{% endblock %}
+
+{% block content %}
+<div class="flex items-center gap-2" style="justify-content: space-between;">
+    <h1>Mutations</h1>
+    <span class="htmx-indicator text-muted text-sm">mise à jour...</span>
+</div>
+
+<div id="mutations-list" hx-get="/partials/mutations-full" hx-trigger="load, every 5s" hx-swap="innerHTML" hx-indicator=".htmx-indicator">
+</div>
+{% endblock %}

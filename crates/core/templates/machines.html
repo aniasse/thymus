@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Machines{% endblock %}
+{% block nav_machines %}class="active"{% endblock %}
+
+{% block content %}
+<h1>Machines</h1>
+
+<div id="machines-list" hx-get="/partials/machines-list" hx-trigger="load, every 10s" hx-swap="innerHTML">
+</div>
+{% endblock %}

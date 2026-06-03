@@ -1,0 +1,20 @@
+<div class="cards">
+    <div class="card">
+        <div class="card-label">Phase</div>
+        <div class="card-value {% if phase == "active" %}green{% else %}accent{% endif %}">
+            {% if phase == "active" %}ACTIVE{% else %}THYMUS{% endif %}
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-label">Machines</div>
+        <div class="card-value accent">{{ machines }}</div>
+    </div>
+    <div class="card">
+        <div class="card-label">Événements</div>
+        <div class="card-value">{{ total_events }}</div>
+    </div>
+    <div class="card">
+        <div class="card-label">Mutations actives</div>
+        <div class="card-value {% if active_mutations > 0 %}red{% else %}green{% endif %}">{{ active_mutations }}</div>
+    </div>
+</div>

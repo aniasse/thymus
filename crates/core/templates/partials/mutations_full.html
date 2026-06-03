@@ -1,0 +1,35 @@
+{% if mutations.is_empty() %}
+<div class="panel">
+    <p class="text-muted">Aucune mutation détectée. L'organisme est sain.</p>
+</div>
+{% else %}
+{% for m in mutations %}
+<div class="panel">
+    <div class="flex items-center gap-2" style="justify-content: space-between;">
+        <div class="flex items-center gap-2">
+            <span class="badge {% if m.risk_score >= 0.8 %}badge-red{% elif m.risk_score >= 0.6 %}badge-yellow{% else %}badge-blue{% endif %}">
+                {{ m.risk_pct }}%
+            </span>
+            <span class="mono">{{ m.machine_id }}</span>
+            <span class="text-muted text-sm">{{ m.detected_at }}</span>
+        </div>
+        <div class="flex gap-1">
+            <button hx-post="/api/mutations/{{ m.id }}/resolve" hx-swap="outerHTML" hx-target="closest .panel">Résolu</button>
+            <button hx-post="/api/mutations/{{ m.id }}/false-positive" hx-swap="outerHTML" hx-target="closest .panel">Faux positif</button>
+        </div>
+    </div>
+    <div class="mt-1">
+        {% for d in m.details %}
+        <div class="text-sm" style="margin-top: 0.5rem; padding: 0.5rem; background: var(--bg); border-radius: 0.25rem;">
+            <span class="badge badge-blue" style="margin-right: 0.5rem;">{{ d.dimension }}</span>
+            {{ d.description }}
+            <div class="text-muted mt-1">
+                Attendu: <span class="mono">{{ d.expected }}</span> —
+                Observé: <span class="mono">{{ d.observed }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+{% endif %}

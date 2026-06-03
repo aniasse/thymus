@@ -1,12 +1,12 @@
 use axum::{
     Json, Router,
-    extract::State,
+    extract::{Path, State},
     http::StatusCode,
     routing::{get, post},
 };
 use serde::Serialize;
 use std::sync::Arc;
-use thymos_common::EventBatch;
+use thymos_common::{EventBatch, MutationStatus};
 use tokio::sync::RwLock;
 
 use crate::db::Db;
@@ -25,6 +25,11 @@ pub fn router(app: Arc<RwLock<AppState>>, db: Arc<Db>) -> Router {
         .route("/api/status", get(status))
         .route("/api/events", post(ingest_events))
         .route("/api/mutations", get(list_mutations))
+        .route("/api/mutations/{id}/resolve", post(resolve_mutation))
+        .route(
+            "/api/mutations/{id}/false-positive",
+            post(false_positive_mutation),
+        )
         .route("/api/profiles", get(list_profiles))
         .route("/api/activate", post(activate))
         .with_state(state)
@@ -116,6 +121,29 @@ async fn list_mutations(State(state): State<CoreState>) -> Json<Vec<MutationResp
         })
         .collect();
     Json(mutations)
+}
+
+async fn resolve_mutation(State(state): State<CoreState>, Path(id): Path<String>) -> StatusCode {
+    let mut s = state.app.write().await;
+    if let Some(m) = s.mutations.iter_mut().find(|m| m.id.to_string() == id) {
+        m.status = MutationStatus::Resolved;
+        StatusCode::OK
+    } else {
+        StatusCode::NOT_FOUND
+    }
+}
+
+async fn false_positive_mutation(
+    State(state): State<CoreState>,
+    Path(id): Path<String>,
+) -> StatusCode {
+    let mut s = state.app.write().await;
+    if let Some(m) = s.mutations.iter_mut().find(|m| m.id.to_string() == id) {
+        m.status = MutationStatus::FalsePositive;
+        StatusCode::OK
+    } else {
+        StatusCode::NOT_FOUND
+    }
 }
 
 async fn list_profiles(State(state): State<CoreState>) -> Json<serde_json::Value> {

@@ -1,0 +1,55 @@
+{% if machines.is_empty() %}
+<div class="panel">
+    <p class="text-muted">Aucune machine enregistrée.</p>
+</div>
+{% else %}
+{% for m in machines %}
+<div class="panel">
+    <div class="flex items-center gap-2" style="justify-content: space-between;">
+        <div>
+            <span class="mono" style="font-size: 1rem; font-weight: 600;">{{ m.hostname }}</span>
+            <span class="text-muted text-sm" style="margin-left: 0.5rem;">{{ m.peer_count }} peers</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <div class="score-bar" style="width: 100px;">
+                <div class="score-fill" style="width: {{ m.maturity_pct }}%; background: {% if m.maturity_pct >= 70 %}var(--green){% elif m.maturity_pct >= 40 %}var(--yellow){% else %}var(--accent){% endif %};"></div>
+            </div>
+            <span class="text-sm text-muted">{{ m.maturity_pct }}%</span>
+        </div>
+    </div>
+    <div class="flex gap-2 mt-1 text-sm text-muted" style="flex-wrap: wrap;">
+        <span>Heures actives: {{ m.active_hours }}</span>
+        <span>·</span>
+        <span>Volume: {{ m.daily_volume }}</span>
+        <span>·</span>
+        <span>Obs: {{ m.observation_days }}j</span>
+    </div>
+    <div class="mt-1">
+        <table>
+            <thead>
+                <tr>
+                    <th>Peer IP</th>
+                    <th>Ports</th>
+                    <th>Connexions</th>
+                    <th>Confiance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in m.peers %}
+                <tr>
+                    <td class="mono">{{ p.ip }}</td>
+                    <td class="mono">{{ p.ports }}</td>
+                    <td>{{ p.connections }}</td>
+                    <td>
+                        <div class="score-bar">
+                            <div class="score-fill" style="width: {{ p.confidence_pct }}%; background: var(--green);"></div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endfor %}
+{% endif %}

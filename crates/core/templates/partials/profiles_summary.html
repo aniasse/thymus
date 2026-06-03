@@ -1,0 +1,29 @@
+{% if profiles.is_empty() %}
+<p class="text-muted text-sm">Aucune machine enregistrée.</p>
+{% else %}
+<table>
+    <thead>
+        <tr>
+            <th>Machine</th>
+            <th>Peers</th>
+            <th>Maturité</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in profiles %}
+        <tr>
+            <td class="mono">{{ p.hostname }}</td>
+            <td>{{ p.peer_count }}</td>
+            <td>
+                <div class="flex items-center gap-1">
+                    <div class="score-bar">
+                        <div class="score-fill" style="width: {{ p.maturity_pct }}%; background: {% if p.maturity_pct >= 70 %}var(--green){% elif p.maturity_pct >= 40 %}var(--yellow){% else %}var(--accent){% endif %};"></div>
+                    </div>
+                    <span class="text-sm text-muted">{{ p.maturity_pct }}%</span>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}

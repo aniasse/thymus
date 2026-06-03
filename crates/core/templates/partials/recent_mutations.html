@@ -1,0 +1,28 @@
+{% if mutations.is_empty() %}
+<p class="text-muted text-sm">Aucune mutation active. L'organisme est sain.</p>
+{% else %}
+<table>
+    <thead>
+        <tr>
+            <th>Score</th>
+            <th>Machine</th>
+            <th>Type</th>
+            <th>Détail</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for m in mutations %}
+        <tr>
+            <td>
+                <span class="badge {% if m.risk_score >= 0.8 %}badge-red{% elif m.risk_score >= 0.6 %}badge-yellow{% else %}badge-blue{% endif %}">
+                    {{ m.risk_pct }}%
+                </span>
+            </td>
+            <td class="mono">{{ m.machine_id }}</td>
+            <td>{{ m.dimensions }}</td>
+            <td class="text-sm">{{ m.description }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}

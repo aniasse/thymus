@@ -1,0 +1,3 @@
+[[escaper]]
+extensions = ["html"]
+path = "askama::filters::Html"

@@ -1,13 +1,16 @@
 mod api;
+mod dashboard;
 mod db;
 mod profiler;
 mod state;
 
 use anyhow::Result;
+use axum::Router;
 use clap::Parser;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use tower_http::services::ServeDir;
 use tracing::info;
 
 #[derive(Parser)]
@@ -44,9 +47,18 @@ async fn main() -> Result<()> {
         }
     });
 
-    let app = api::router(app_state.clone(), database.clone());
+    let static_dir = find_static_dir();
+
+    let app = Router::new()
+        .merge(api::router(app_state.clone(), database.clone()))
+        .merge(dashboard::router().with_state(api::CoreState {
+            app: app_state.clone(),
+            db: database.clone(),
+        }))
+        .nest_service("/static", ServeDir::new(static_dir));
+
     let listener = tokio::net::TcpListener::bind(&args.listen).await?;
-    info!(addr = %args.listen, data = %args.data_dir.display(), "thymos-core started");
+    info!(addr = %args.listen, "thymos-core started");
 
     let shutdown_state = app_state.clone();
     let shutdown_db = database.clone();
@@ -61,4 +73,23 @@ async fn main() -> Result<()> {
         .await?;
 
     Ok(())
+}
+
+fn find_static_dir() -> PathBuf {
+    let candidates = [
+        PathBuf::from("crates/core/static"),
+        PathBuf::from("static"),
+        std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(|d| d.join("static")))
+            .unwrap_or_default(),
+    ];
+
+    for path in &candidates {
+        if path.exists() {
+            return path.clone();
+        }
+    }
+
+    PathBuf::from("static")
 }
