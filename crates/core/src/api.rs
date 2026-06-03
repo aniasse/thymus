@@ -2,6 +2,7 @@ use axum::{
     Json, Router,
     extract::{Path, State},
     http::StatusCode,
+    response::Response,
     routing::{get, post},
 };
 use serde::{Deserialize, Serialize};
@@ -16,10 +17,10 @@ use crate::state::{AppState, Phase};
 pub struct CoreState {
     pub app: Arc<RwLock<AppState>>,
     pub db: Arc<Db>,
+    pub token: Option<String>,
 }
 
-pub fn router(app: Arc<RwLock<AppState>>, db: Arc<Db>) -> Router {
-    let state = CoreState { app, db };
+pub fn router(state: CoreState) -> Router {
     Router::new()
         .route("/api/health", get(health))
         .route("/api/status", get(status))
@@ -35,7 +36,28 @@ pub fn router(app: Arc<RwLock<AppState>>, db: Arc<Db>) -> Router {
         .route("/api/tolerances", get(list_tolerances))
         .route("/api/context", post(add_context))
         .route("/api/activate", post(activate))
+        .route("/api/login", post(login))
         .with_state(state)
+}
+
+#[derive(Deserialize)]
+struct LoginRequest {
+    token: String,
+}
+
+async fn login(State(state): State<CoreState>, Json(req): Json<LoginRequest>) -> Response {
+    use axum::http::header;
+    use axum::response::IntoResponse;
+
+    match state.token {
+        Some(ref expected) if &req.token == expected => (
+            StatusCode::OK,
+            [(header::SET_COOKIE, crate::auth::session_cookie(&req.token))],
+            "ok",
+        )
+            .into_response(),
+        _ => (StatusCode::UNAUTHORIZED, "invalid token").into_response(),
+    }
 }
 
 async fn health() -> &'static str {

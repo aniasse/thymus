@@ -6,6 +6,7 @@ use crate::api::CoreState;
 pub fn router() -> Router<CoreState> {
     Router::new()
         .route("/", get(status_page))
+        .route("/login", get(login_page))
         .route("/mutations", get(mutations_page))
         .route("/machines", get(machines_page))
         .route("/network", get(network_page))
@@ -26,6 +27,14 @@ struct StatusPage;
 
 async fn status_page() -> Html<String> {
     Html(StatusPage.render().unwrap_or_default())
+}
+
+#[derive(Template)]
+#[template(path = "login.html")]
+struct LoginPage;
+
+async fn login_page() -> Html<String> {
+    Html(LoginPage.render().unwrap_or_default())
 }
 
 #[derive(Template)]

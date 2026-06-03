@@ -1,5 +1,6 @@
 mod alerting;
 mod api;
+mod auth;
 mod dashboard;
 mod db;
 mod profiler;
@@ -28,6 +29,9 @@ struct Args {
 
     #[arg(long, default_value = "0.7")]
     webhook_min_score: f64,
+
+    #[arg(long)]
+    token: Option<String>,
 }
 
 #[tokio::main]
@@ -72,13 +76,23 @@ async fn main() -> Result<()> {
 
     let static_dir = find_static_dir();
 
+    let core_state = api::CoreState {
+        app: app_state.clone(),
+        db: database.clone(),
+        token: args.token.clone(),
+    };
+    if args.token.is_some() {
+        info!("token auth enabled");
+    }
+
     let app = Router::new()
-        .merge(api::router(app_state.clone(), database.clone()))
-        .merge(dashboard::router().with_state(api::CoreState {
-            app: app_state.clone(),
-            db: database.clone(),
-        }))
-        .nest_service("/static", ServeDir::new(static_dir));
+        .merge(api::router(core_state.clone()))
+        .merge(dashboard::router().with_state(core_state.clone()))
+        .nest_service("/static", ServeDir::new(static_dir))
+        .layer(axum::middleware::from_fn_with_state(
+            core_state,
+            auth::require_auth,
+        ));
 
     let listener = tokio::net::TcpListener::bind(&args.listen).await?;
     info!(addr = %args.listen, "thymos-core started");

@@ -19,6 +19,9 @@ struct Args {
 
     #[arg(long)]
     sensor_id: Option<String>,
+
+    #[arg(long)]
+    token: Option<String>,
 }
 
 #[tokio::main]
@@ -39,7 +42,7 @@ async fn main() -> Result<()> {
 
     let mut buffer = buffer::EventBuffer::new(sensor_id, 10_000);
     let collector = collector::NetworkCollector::new();
-    let sender = sender::CoreSender::new(&args.core_addr);
+    let sender = sender::CoreSender::new(&args.core_addr, args.token);
     let interval = Duration::from_secs(args.interval);
 
     loop {

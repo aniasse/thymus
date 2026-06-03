@@ -38,16 +38,52 @@ cargo build --release
 curl http://localhost:9443/api/status
 ```
 
+## Dashboard
+
+Le Core sert un dashboard web (HTMX, zéro build JS) directement sur le port d'écoute :
+
+- `/` — État de l'organisme (phase, machines, mutations, maturité)
+- `/mutations` — Mutations actives avec résolution
+- `/machines` — ADN comportemental des machines
+- `/network` — Cartographie réseau et chaînes latérales
+
+## Authentification (optionnelle)
+
+```bash
+# Démarrer le Core avec un token
+./target/release/thymos-core --token mon-secret
+
+# Les sensors doivent fournir le token
+./target/release/thymos-sensor --core-addr http://CORE_IP:9443 --token mon-secret
+```
+
+Sans `--token`, l'accès est ouvert. Avec un token : le dashboard exige une connexion
+(page `/login`, session cookie) et l'API exige un header `Authorization: Bearer <token>`.
+
+## Alerting webhook (optionnel)
+
+```bash
+./target/release/thymos-core --webhook https://hooks.example.com/thymos --webhook-min-score 0.7
+```
+
+Envoie un POST JSON à chaque mutation ou chaîne latérale dépassant le score minimum.
+
 ## API
 
 | Endpoint | Méthode | Description |
 |----------|---------|-------------|
-| `/api/health` | GET | Health check |
+| `/api/health` | GET | Health check (toujours ouvert) |
 | `/api/status` | GET | État du système (phase, machines, mutations) |
 | `/api/events` | POST | Ingestion d'un batch d'événements |
 | `/api/mutations` | GET | Liste des mutations actives |
+| `/api/mutations/{id}/resolve` | POST | Marquer une mutation comme résolue |
+| `/api/mutations/{id}/false-positive` | POST | Marquer comme faux positif (crée une tolérance) |
+| `/api/chains` | GET | Chaînes de déplacement latéral |
 | `/api/profiles` | GET | Profils ADN des machines |
+| `/api/tolerances` | GET | Entrées de tolérance immunitaire |
+| `/api/context` | POST | Déclarer un contexte (maintenance, migration) |
 | `/api/activate` | POST | Passer de la Phase Thymus au mode actif |
+| `/api/login` | POST | Obtenir une session (si token configuré) |
 
 ## Licence
 
