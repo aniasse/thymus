@@ -126,8 +126,11 @@ async fn list_mutations(State(state): State<CoreState>) -> Json<Vec<MutationResp
 
 async fn resolve_mutation(State(state): State<CoreState>, Path(id): Path<String>) -> StatusCode {
     let mut s = state.app.write().await;
-    if let Some(m) = s.mutations.iter_mut().find(|m| m.id.to_string() == id) {
-        m.status = MutationStatus::Resolved;
+    let idx = s.mutations.iter().position(|m| m.id.to_string() == id);
+    if let Some(idx) = idx {
+        s.mutations[idx].status = MutationStatus::Resolved;
+        let resolved = s.mutations[idx].clone();
+        s.memory.learn_from_resolved(&resolved);
         StatusCode::OK
     } else {
         StatusCode::NOT_FOUND

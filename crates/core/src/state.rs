@@ -6,6 +6,7 @@ use thymos_common::{
 use thymos_detection::ImmuneEngine;
 use thymos_detection::innate::PortScanDetector;
 use thymos_detection::lateral::LateralDetector;
+use thymos_detection::memory::ImmuneMemory;
 
 use crate::profiler;
 
@@ -15,6 +16,7 @@ pub struct AppState {
     pub chains: Vec<LateralChain>,
     pub event_count: u64,
     pub engine: ImmuneEngine,
+    pub memory: ImmuneMemory,
     pub phase: Phase,
     pub scan_detector: PortScanDetector,
     pub lateral_detector: LateralDetector,
@@ -40,12 +42,16 @@ impl AppState {
         let machine_count = profiles.len();
         let mutation_count = mutations.len();
 
+        let memory_cells = db.load_memory_cells().unwrap_or_default();
+        let cell_count = memory_cells.len();
+
         let state = Self {
             profiles,
             mutations,
             chains: Vec::new(),
             event_count,
             engine: ImmuneEngine::new(),
+            memory: ImmuneMemory::load(memory_cells),
             phase,
             scan_detector: PortScanDetector::default(),
             lateral_detector: LateralDetector::new(),
@@ -56,6 +62,7 @@ impl AppState {
             tracing::info!(
                 machines = machine_count,
                 mutations = mutation_count,
+                memory_cells = cell_count,
                 events = event_count,
                 phase = ?phase,
                 "restored state from db"
@@ -81,6 +88,9 @@ impl AppState {
         };
         if let Err(e) = db.save_phase(phase_str) {
             tracing::error!(error = %e, "failed to save phase");
+        }
+        if let Err(e) = db.save_memory_cells(self.memory.cells()) {
+            tracing::error!(error = %e, "failed to save memory cells");
         }
         self.batches_since_save = 0;
     }
@@ -127,7 +137,17 @@ impl AppState {
 
                 // Normal immune detection
                 let profile = &self.profiles[machine_id];
-                if let Some(mutation) = self.engine.analyze_network_event(event, profile) {
+                if let Some(mut mutation) = self.engine.analyze_network_event(event, profile) {
+                    // Consult immune memory for accelerated response
+                    if let Some(mem_match) = self.memory.consult(&mutation) {
+                        tracing::info!(
+                            cell = %mem_match.cell_id,
+                            similarity = mem_match.similarity,
+                            "memory match — accelerated response"
+                        );
+                        mutation.response = mem_match.suggested_response;
+                    }
+
                     tracing::warn!(
                         machine = %mutation.machine_id,
                         score = mutation.risk_score,

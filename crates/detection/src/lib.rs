@@ -3,6 +3,7 @@ pub mod adaptive;
 mod engine_tests;
 pub mod innate;
 pub mod lateral;
+pub mod memory;
 pub mod scoring;
 
 use thymos_common::{MachineIdentity, Mutation, NetworkEvent};

@@ -4,7 +4,8 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Mutex;
 use thymos_common::{
-    ConnectionDirection, MachineIdentity, Mutation, MutationStatus, PeerProfile, ResponseAction,
+    ConnectionDirection, MachineIdentity, MemoryCell, Mutation, MutationStatus, PeerProfile,
+    ResponseAction,
 };
 
 pub struct Db {
@@ -57,6 +58,11 @@ impl Db {
                 status TEXT NOT NULL,
                 response TEXT,
                 details TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS memory_cells (
+                id TEXT PRIMARY KEY,
+                created_at TEXT NOT NULL,
+                data TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS meta (
                 key TEXT PRIMARY KEY,
@@ -330,5 +336,33 @@ impl Db {
         }
 
         Ok(mutations)
+    }
+
+    pub fn save_memory_cells(&self, cells: &[MemoryCell]) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        let tx = conn.unchecked_transaction()?;
+        tx.execute("DELETE FROM memory_cells", [])?;
+
+        for cell in cells {
+            let data = serde_json::to_string(cell)?;
+            tx.execute(
+                "INSERT INTO memory_cells (id, created_at, data) VALUES (?1, ?2, ?3)",
+                rusqlite::params![cell.id.to_string(), cell.created_at.to_rfc3339(), data],
+            )?;
+        }
+
+        tx.commit()?;
+        Ok(())
+    }
+
+    pub fn load_memory_cells(&self) -> Result<Vec<MemoryCell>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT data FROM memory_cells")?;
+        let cells = stmt
+            .query_map([], |row| row.get::<_, String>(0))?
+            .flatten()
+            .filter_map(|data| serde_json::from_str(&data).ok())
+            .collect();
+        Ok(cells)
     }
 }
