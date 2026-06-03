@@ -44,7 +44,7 @@ pub struct SystemEvent {
     pub details: String,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Protocol {
     Tcp,
     Udp,
@@ -83,10 +83,21 @@ pub enum SystemEventType {
     },
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum CollectionMode {
+    /// Agent installed on the host, reads /proc/net (one machine per sensor).
+    #[default]
+    Host,
+    /// Passive sniffing on a mirror/SPAN port (many devices seen by one sensor).
+    Passive,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventBatch {
     pub sensor_id: String,
     pub timestamp: DateTime<Utc>,
+    #[serde(default)]
+    pub mode: CollectionMode,
     pub network_events: Vec<NetworkEvent>,
     pub process_events: Vec<ProcessEvent>,
     pub system_events: Vec<SystemEvent>,
@@ -97,9 +108,17 @@ impl EventBatch {
         Self {
             sensor_id,
             timestamp: Utc::now(),
+            mode: CollectionMode::Host,
             network_events: Vec::new(),
             process_events: Vec::new(),
             system_events: Vec::new(),
+        }
+    }
+
+    pub fn new_passive(sensor_id: String) -> Self {
+        Self {
+            mode: CollectionMode::Passive,
+            ..Self::new(sensor_id)
         }
     }
 

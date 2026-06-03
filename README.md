@@ -38,6 +38,32 @@ cargo build --release
 curl http://localhost:9443/api/status
 ```
 
+## Deux modes de collecte
+
+### Mode hôte (agent, par défaut)
+
+L'agent est installé sur une machine et lit `/proc/net` + `/proc/{pid}`. Il voit les
+connexions et les processus de cette machine. Idéal pour serveurs et postes Linux.
+
+```bash
+./target/release/thymos-sensor --core-addr http://CORE_IP:9443
+```
+
+### Mode passif (sans agent)
+
+Un seul sensor branché sur un **port miroir (SPAN)** d'un switch capture les flux de
+**tout le réseau** — y compris les appareils où aucun agent n'est installable :
+imprimantes réseau, caméras IP, équipements IoT, automates, terminaux de paiement.
+
+```bash
+# Nécessite root / CAP_NET_RAW
+sudo ./target/release/thymos-sensor --interface eth0 --core-addr http://CORE_IP:9443
+```
+
+Le sensor passif n'analyse que les **métadonnées de flux** (qui parle à qui, quand,
+combien) — jamais le contenu des paquets. Le Core profile chaque appareil local
+(RFC1918) par son IP et construit l'ADN relationnel de l'écosystème complet.
+
 ## Dashboard
 
 Le Core sert un dashboard web (HTMX, zéro build JS) directement sur le port d'écoute :

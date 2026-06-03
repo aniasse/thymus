@@ -20,6 +20,8 @@ chrono = { workspace = true }
 anyhow = { workspace = true }
 clap = { workspace = true }
 reqwest = { version = "0.12", features = ["json"] }
+pnet_datalink = "0.35"
+pnet_packet = "0.35"
 
 [lints]
 workspace = true

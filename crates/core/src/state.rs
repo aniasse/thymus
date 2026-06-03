@@ -1,7 +1,8 @@
 use std::collections::HashMap;
+use std::net::IpAddr;
 use thymos_common::{
-    ConnectionDirection, EventBatch, LateralChain, MachineIdentity, Mutation, MutationDimension,
-    MutationStatus, NetworkEvent, PeerProfile, ToleranceContext, ToleranceEntry,
+    CollectionMode, ConnectionDirection, EventBatch, LateralChain, MachineIdentity, Mutation,
+    MutationDimension, MutationStatus, NetworkEvent, PeerProfile, ToleranceContext, ToleranceEntry,
 };
 use thymos_detection::ImmuneEngine;
 use thymos_detection::innate::PortScanDetector;
@@ -115,115 +116,152 @@ impl AppState {
         self.event_count += batch.event_count() as u64;
         self.batches_since_save += 1;
 
-        for event in &batch.network_events {
-            let machine_id = &batch.sensor_id;
-
-            if !self.profiles.contains_key(machine_id) {
-                self.profiles.insert(
-                    machine_id.clone(),
-                    MachineIdentity::new(machine_id.clone(), machine_id.clone()),
-                );
-            }
-
-            if self.phase == Phase::Active {
-                // Check port scan
-                let is_scan =
-                    self.scan_detector
-                        .record(machine_id, event.dest_port, event.timestamp);
-
-                if is_scan {
-                    let mut mutation = Mutation::new(machine_id.clone());
-                    mutation.risk_score = 0.9;
-                    mutation.innate_score = 0.9;
-                    mutation.dimensions = vec![MutationDimension::Relational];
-                    mutation.details.push(thymos_common::MutationDetail {
-                        dimension: MutationDimension::Relational,
-                        description: format!("{machine_id} scanne plus de 10 ports en 60s"),
-                        expected_value: "< 10 ports distincts".into(),
-                        observed_value: "scan de ports détecté".into(),
-                        deviation_sigma: 5.0,
-                    });
-                    tracing::warn!(machine = %machine_id, "port scan detected");
-                    if let Some(ref wh) = self.webhook {
-                        wh.send_mutation(&mutation);
+        match batch.mode {
+            CollectionMode::Host => {
+                for event in &batch.network_events {
+                    let machine_id = batch.sensor_id.clone();
+                    self.ensure_profile(&machine_id);
+                    if self.phase == Phase::Active {
+                        self.detect_on_machine(&machine_id, event);
                     }
-                    self.mutations.push(mutation);
-                }
-
-                // Normal immune detection
-                let profile = &self.profiles[machine_id];
-                if let Some(mut mutation) = self.engine.analyze_network_event(event, profile) {
-                    // Check tolerance (immune tolerance)
-                    let dest_ip_str = event.dest_ip.to_string();
-                    let is_tolerated = self.tolerances.iter_mut().any(|t| {
-                        let m = t.matches(
-                            machine_id,
-                            &mutation.dimensions,
-                            mutation.risk_score,
-                            Some(&dest_ip_str),
-                        );
-                        if m {
-                            t.hits += 1;
-                        }
-                        m
-                    });
-
-                    if is_tolerated {
-                        continue;
-                    }
-
-                    // Check active contexts
-                    let in_context = self
-                        .contexts
-                        .iter()
-                        .any(|ctx| ctx.is_active() && ctx.affects_machine(machine_id));
-                    if in_context {
-                        mutation.risk_score *= 0.5;
-                        if mutation.risk_score < 0.4 {
-                            continue;
-                        }
-                    }
-
-                    // Consult immune memory for accelerated response
-                    if let Some(mem_match) = self.memory.consult(&mutation) {
-                        tracing::info!(
-                            cell = %mem_match.cell_id,
-                            similarity = mem_match.similarity,
-                            "memory match — accelerated response"
-                        );
-                        mutation.response = mem_match.suggested_response;
-                    }
-
-                    tracing::warn!(
-                        machine = %mutation.machine_id,
-                        score = mutation.risk_score,
-                        "mutation detected"
-                    );
-
-                    if let Some(ref wh) = self.webhook {
-                        wh.send_mutation(&mutation);
-                    }
-
-                    // Feed to lateral detector
-                    let dest_ips = vec![event.dest_ip.to_string()];
-                    if let Some(chain) = self.lateral_detector.record_mutation(&mutation, dest_ips)
-                    {
-                        if let Some(ref wh) = self.webhook {
-                            wh.send_chain(&chain);
-                        }
-                        self.chains.push(chain);
-                    }
-
-                    self.mutations.push(mutation);
+                    self.update_profile(&machine_id, event);
                 }
             }
-
-            self.update_profile(machine_id, event);
+            CollectionMode::Passive => {
+                for event in &batch.network_events {
+                    self.ingest_passive_event(event);
+                }
+            }
         }
 
         if self.phase == Phase::Thymus {
             self.check_auto_activate();
         }
+    }
+
+    fn ensure_profile(&mut self, machine_id: &str) {
+        if !self.profiles.contains_key(machine_id) {
+            self.profiles.insert(
+                machine_id.to_string(),
+                MachineIdentity::new(machine_id.to_string(), machine_id.to_string()),
+            );
+        }
+    }
+
+    /// Passive mode: a single sensor observes many devices. We attribute each
+    /// flow to its endpoints by IP and only profile devices on the local network
+    /// (RFC1918). The client (initiator) is profiled and analysed; the server is
+    /// profiled too so it appears in the relational graph.
+    fn ingest_passive_event(&mut self, event: &NetworkEvent) {
+        let client_local = is_private(&event.source_ip);
+        let server_local = is_private(&event.dest_ip);
+
+        if client_local {
+            let client_id = event.source_ip.to_string();
+            self.ensure_profile(&client_id);
+            if self.phase == Phase::Active {
+                self.detect_on_machine(&client_id, event);
+            }
+            self.update_profile(&client_id, event);
+        }
+
+        if server_local {
+            let server_id = event.dest_ip.to_string();
+            self.ensure_profile(&server_id);
+            self.update_profile_incoming(&server_id, event);
+        }
+    }
+
+    /// The full immune detection pipeline for one (machine, event) pair.
+    fn detect_on_machine(&mut self, machine_id: &str, event: &NetworkEvent) {
+        // Port scan (innate, stateful)
+        if self
+            .scan_detector
+            .record(machine_id, event.dest_port, event.timestamp)
+        {
+            let mut mutation = Mutation::new(machine_id.to_string());
+            mutation.risk_score = 0.9;
+            mutation.innate_score = 0.9;
+            mutation.dimensions = vec![MutationDimension::Relational];
+            mutation.details.push(thymos_common::MutationDetail {
+                dimension: MutationDimension::Relational,
+                description: format!("{machine_id} scanne plus de 10 ports en 60s"),
+                expected_value: "< 10 ports distincts".into(),
+                observed_value: "scan de ports détecté".into(),
+                deviation_sigma: 5.0,
+            });
+            tracing::warn!(machine = %machine_id, "port scan detected");
+            if let Some(ref wh) = self.webhook {
+                wh.send_mutation(&mutation);
+            }
+            self.mutations.push(mutation);
+        }
+
+        // Dual-layer immune detection
+        let profile = &self.profiles[machine_id];
+        let Some(mut mutation) = self.engine.analyze_network_event(event, profile) else {
+            return;
+        };
+
+        // Tolerance
+        let dest_ip_str = event.dest_ip.to_string();
+        let is_tolerated = self.tolerances.iter_mut().any(|t| {
+            let m = t.matches(
+                machine_id,
+                &mutation.dimensions,
+                mutation.risk_score,
+                Some(&dest_ip_str),
+            );
+            if m {
+                t.hits += 1;
+            }
+            m
+        });
+        if is_tolerated {
+            return;
+        }
+
+        // Active contexts
+        let in_context = self
+            .contexts
+            .iter()
+            .any(|ctx| ctx.is_active() && ctx.affects_machine(machine_id));
+        if in_context {
+            mutation.risk_score *= 0.5;
+            if mutation.risk_score < 0.4 {
+                return;
+            }
+        }
+
+        // Immune memory
+        if let Some(mem_match) = self.memory.consult(&mutation) {
+            tracing::info!(
+                cell = %mem_match.cell_id,
+                similarity = mem_match.similarity,
+                "memory match — accelerated response"
+            );
+            mutation.response = mem_match.suggested_response;
+        }
+
+        tracing::warn!(
+            machine = %mutation.machine_id,
+            score = mutation.risk_score,
+            "mutation detected"
+        );
+        if let Some(ref wh) = self.webhook {
+            wh.send_mutation(&mutation);
+        }
+
+        // Lateral movement
+        let dest_ips = vec![event.dest_ip.to_string()];
+        if let Some(chain) = self.lateral_detector.record_mutation(&mutation, dest_ips) {
+            if let Some(ref wh) = self.webhook {
+                wh.send_chain(&chain);
+            }
+            self.chains.push(chain);
+        }
+
+        self.mutations.push(mutation);
     }
 
     fn update_profile(&mut self, machine_id: &str, event: &NetworkEvent) {
@@ -268,6 +306,46 @@ impl AppState {
         profile.last_updated = event.timestamp;
     }
 
+    /// Server-side profiling for passive flows: the peer is the *source* (client),
+    /// observed on the server's listening port.
+    fn update_profile_incoming(&mut self, machine_id: &str, event: &NetworkEvent) {
+        let Some(profile) = self.profiles.get_mut(machine_id) else {
+            return;
+        };
+
+        if let Some(peer) = profile
+            .relational
+            .known_peers
+            .iter_mut()
+            .find(|p| p.peer_ip == event.source_ip)
+        {
+            peer.last_seen = event.timestamp;
+            peer.avg_daily_connections += 1.0;
+            if !peer.ports.contains(&event.dest_port) {
+                peer.ports.push(event.dest_port);
+            }
+            peer.confidence = (peer.confidence + 0.01).min(1.0);
+        } else {
+            profile.relational.known_peers.push(PeerProfile {
+                peer_ip: event.source_ip,
+                peer_hostname: None,
+                ports: vec![event.dest_port],
+                protocols: vec![event.protocol],
+                direction: ConnectionDirection::Incoming,
+                avg_daily_volume: event.bytes_sent + event.bytes_recv,
+                avg_daily_connections: 1.0,
+                first_seen: event.timestamp,
+                last_seen: event.timestamp,
+                confidence: 0.1,
+            });
+        }
+
+        profiler::update_temporal_stats(profile, event);
+        profiler::update_observation_days(profile);
+        profiler::compute_maturity(profile);
+        profile.last_updated = event.timestamp;
+    }
+
     fn check_auto_activate(&mut self) {
         if profiler::should_auto_activate(&self.profiles) {
             tracing::info!("all profiles mature — auto-activating immune detection");
@@ -298,5 +376,117 @@ impl AppState {
         let mut cells = self.memory.take_cells();
         thymos_detection::clonal::ClonalSelection::optimize(&mut cells);
         self.memory.replace_cells(cells);
+    }
+}
+
+/// Whether an address belongs to a local network we should profile as a device.
+/// Uses RFC1918 private ranges for IPv4 (covers most LANs). IPv6 unique-local
+/// detection is not yet stable in std, so v6 is treated as non-local for now.
+fn is_private(ip: &IpAddr) -> bool {
+    match ip {
+        IpAddr::V4(v4) => v4.is_private(),
+        IpAddr::V6(_) => false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::net::Ipv4Addr;
+    use thymos_common::Protocol;
+    use uuid::Uuid;
+
+    fn temp_state() -> AppState {
+        let dir = std::env::temp_dir().join(format!("thymos-test-{}", Uuid::new_v4()));
+        let db = crate::db::Db::open(&dir).unwrap();
+        AppState::load_from_db(&db)
+    }
+
+    fn passive_event(sip: &str, dip: &str, dport: u16, sent: u64, recv: u64) -> NetworkEvent {
+        NetworkEvent {
+            id: Uuid::new_v4(),
+            timestamp: chrono::Utc::now(),
+            sensor_id: "span".into(),
+            source_ip: sip.parse().unwrap(),
+            source_port: 0,
+            dest_ip: dip.parse().unwrap(),
+            dest_port: dport,
+            protocol: Protocol::Tcp,
+            bytes_sent: sent,
+            bytes_recv: recv,
+            process_pid: 0,
+            process_name: String::new(),
+            process_user: String::new(),
+        }
+    }
+
+    #[test]
+    fn is_private_rfc1918() {
+        assert!(is_private(&"192.168.1.1".parse().unwrap()));
+        assert!(is_private(&"10.0.0.1".parse().unwrap()));
+        assert!(is_private(&"172.16.5.5".parse().unwrap()));
+        assert!(!is_private(&"8.8.8.8".parse().unwrap()));
+        assert!(!is_private(&"1.1.1.1".parse().unwrap()));
+    }
+
+    #[test]
+    fn passive_profiles_both_local_endpoints() {
+        let mut s = temp_state();
+        let mut batch = EventBatch::new_passive("span".into());
+        batch.network_events.push(passive_event(
+            "192.168.1.50",
+            "192.168.1.10",
+            443,
+            1500,
+            4000,
+        ));
+        s.ingest_batch(&batch);
+
+        // Both endpoints profiled, keyed by IP
+        assert!(s.profiles.contains_key("192.168.1.50"));
+        assert!(s.profiles.contains_key("192.168.1.10"));
+
+        // Client sees server as an outgoing peer on :443
+        let client = &s.profiles["192.168.1.50"];
+        assert_eq!(client.relational.known_peers.len(), 1);
+        let cpeer = &client.relational.known_peers[0];
+        assert_eq!(cpeer.peer_ip, Ipv4Addr::new(192, 168, 1, 10));
+        assert_eq!(cpeer.direction, ConnectionDirection::Outgoing);
+        assert!(cpeer.ports.contains(&443));
+
+        // Server sees client as an incoming peer on its listening port :443
+        let server = &s.profiles["192.168.1.10"];
+        let speer = &server.relational.known_peers[0];
+        assert_eq!(speer.peer_ip, Ipv4Addr::new(192, 168, 1, 50));
+        assert_eq!(speer.direction, ConnectionDirection::Incoming);
+        assert!(speer.ports.contains(&443));
+    }
+
+    #[test]
+    fn passive_skips_external_endpoints() {
+        let mut s = temp_state();
+        let mut batch = EventBatch::new_passive("span".into());
+        // Local device → public internet: only the local device is profiled.
+        batch
+            .network_events
+            .push(passive_event("192.168.1.50", "8.8.8.8", 443, 100, 100));
+        s.ingest_batch(&batch);
+
+        assert!(s.profiles.contains_key("192.168.1.50"));
+        assert!(!s.profiles.contains_key("8.8.8.8"));
+    }
+
+    #[test]
+    fn host_mode_unchanged() {
+        let mut s = temp_state();
+        let mut batch = EventBatch::new("host-a".into());
+        batch
+            .network_events
+            .push(passive_event("192.168.1.50", "192.168.1.10", 443, 100, 100));
+        s.ingest_batch(&batch);
+
+        // Host mode keys the profile by sensor_id, not by IP
+        assert!(s.profiles.contains_key("host-a"));
+        assert!(!s.profiles.contains_key("192.168.1.50"));
     }
 }
