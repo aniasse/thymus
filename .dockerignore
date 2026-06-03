@@ -1,0 +1,7 @@
+target/
+data/
+.git/
+docs/
+deploy/
+*.md
+*.pdf

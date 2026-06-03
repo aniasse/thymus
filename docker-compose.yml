@@ -1,0 +1,62 @@
+services:
+  core:
+    build: .
+    command: thymos-core --listen 0.0.0.0:9443 --data-dir /data
+    ports:
+      - "9443:9443"
+    volumes:
+      - core-data:/data
+
+  rh-01:
+    image: python:3.12-slim
+    command: python3 /app/traffic-sim.py
+    environment:
+      - CORE_URL=http://core:9443
+      - SENSOR_ID=rh-01
+      - INTERVAL=5
+    volumes:
+      - ./deploy/docker/traffic-sim.py:/app/traffic-sim.py:ro
+    depends_on:
+      - core
+
+  finance-01:
+    image: python:3.12-slim
+    command: python3 /app/traffic-sim.py
+    environment:
+      - CORE_URL=http://core:9443
+      - SENSOR_ID=finance-01
+      - INTERVAL=5
+    volumes:
+      - ./deploy/docker/traffic-sim.py:/app/traffic-sim.py:ro
+    depends_on:
+      - core
+
+  it-01:
+    image: python:3.12-slim
+    command: python3 /app/traffic-sim.py
+    environment:
+      - CORE_URL=http://core:9443
+      - SENSOR_ID=it-01
+      - INTERVAL=5
+    volumes:
+      - ./deploy/docker/traffic-sim.py:/app/traffic-sim.py:ro
+    depends_on:
+      - core
+
+  attacker:
+    image: python:3.12-slim
+    command: python3 /app/attack-sim.py
+    environment:
+      - CORE_URL=http://core:9443
+      - SCENARIO=lateral_movement
+    volumes:
+      - ./deploy/docker/attack-sim.py:/app/attack-sim.py:ro
+    depends_on:
+      - core
+      - rh-01
+      - finance-01
+    profiles:
+      - attack
+
+volumes:
+  core-data:
