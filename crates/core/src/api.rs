@@ -177,7 +177,7 @@ async fn list_tolerances(State(state): State<CoreState>) -> Json<serde_json::Val
 struct ContextRequest {
     context_type: String,
     affected_machines: Vec<String>,
-    duration_hours: u64,
+    duration_hours: i64,
     description: String,
 }
 
@@ -191,7 +191,7 @@ async fn add_context(
         context_type: req.context_type,
         affected_machines: req.affected_machines,
         start: chrono::Utc::now(),
-        end: chrono::Utc::now() + chrono::Duration::hours(req.duration_hours as i64),
+        end: chrono::Utc::now() + chrono::Duration::hours(req.duration_hours),
         description: req.description,
     };
     tracing::info!(context = %ctx.context_type, hours = req.duration_hours, "context declared");

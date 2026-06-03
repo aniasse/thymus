@@ -221,7 +221,11 @@ struct MachinesListPartial {
     machines: Vec<MachineRow>,
 }
 
-#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+#[allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss
+)]
 async fn partial_machines_list(State(state): State<CoreState>) -> Html<String> {
     let s = state.app.read().await;
     let machines: Vec<MachineRow> = s
@@ -311,7 +315,12 @@ struct NetworkGraphPartial {
     chain_paths: Vec<ChainPath>,
 }
 
-#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+#[allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss,
+    clippy::too_many_lines
+)]
 async fn partial_network_graph(State(state): State<CoreState>) -> Html<String> {
     let s = state.app.read().await;
     let machine_ids: Vec<String> = s.profiles.keys().cloned().collect();

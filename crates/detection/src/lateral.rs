@@ -47,11 +47,13 @@ impl LateralDetector {
             .cloned()
             .collect();
 
+        let first_dest = dest_ips.first().cloned().unwrap_or_default();
+
         self.recent_mutations.push(RecentMutation {
             machine_id: mutation.machine_id.clone(),
             mutation_id: mutation.id,
             timestamp: mutation.detected_at,
-            dest_ips: dest_ips.clone(),
+            dest_ips,
             risk_score: mutation.risk_score,
         });
 
@@ -63,7 +65,7 @@ impl LateralDetector {
             machine_id: mutation.machine_id.clone(),
             mutation_id: mutation.id,
             timestamp: mutation.detected_at,
-            dest_ip: dest_ips.first().cloned().unwrap_or_default(),
+            dest_ip: first_dest,
             risk_score: mutation.risk_score,
         };
 

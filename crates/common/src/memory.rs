@@ -46,6 +46,7 @@ impl MemoryCell {
         }
     }
 
+    #[allow(clippy::cast_precision_loss)]
     pub fn matches(&self, dimensions: &[MutationDimension], risk_score: f64, innate: bool) -> f64 {
         let dim_overlap = self
             .mutation_dimensions

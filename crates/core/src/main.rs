@@ -1,3 +1,4 @@
+mod alerting;
 mod api;
 mod dashboard;
 mod db;
@@ -21,6 +22,12 @@ struct Args {
 
     #[arg(long, default_value = "data")]
     data_dir: PathBuf,
+
+    #[arg(long)]
+    webhook: Option<String>,
+
+    #[arg(long, default_value = "0.7")]
+    webhook_min_score: f64,
 }
 
 #[tokio::main]
@@ -31,7 +38,12 @@ async fn main() -> Result<()> {
 
     let args = Args::parse();
     let database = Arc::new(db::Db::open(&args.data_dir)?);
-    let app_state = Arc::new(RwLock::new(state::AppState::load_from_db(&database)));
+    let mut initial_state = state::AppState::load_from_db(&database);
+    if let Some(url) = args.webhook {
+        info!(url = %url, min_score = args.webhook_min_score, "webhook alerting enabled");
+        initial_state.webhook = Some(alerting::WebhookConfig::new(url, args.webhook_min_score));
+    }
+    let app_state = Arc::new(RwLock::new(initial_state));
 
     let save_state = app_state.clone();
     let save_db = database.clone();

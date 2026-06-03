@@ -8,6 +8,7 @@ use thymos_detection::innate::PortScanDetector;
 use thymos_detection::lateral::LateralDetector;
 use thymos_detection::memory::ImmuneMemory;
 
+use crate::alerting::WebhookConfig;
 use crate::profiler;
 
 pub struct AppState {
@@ -22,6 +23,7 @@ pub struct AppState {
     pub phase: Phase,
     pub scan_detector: PortScanDetector,
     pub lateral_detector: LateralDetector,
+    pub webhook: Option<WebhookConfig>,
     batches_since_save: u32,
 }
 
@@ -61,6 +63,7 @@ impl AppState {
             phase,
             scan_detector: PortScanDetector::default(),
             lateral_detector: LateralDetector::new(),
+            webhook: None,
             batches_since_save: 0,
         };
 
@@ -141,6 +144,9 @@ impl AppState {
                         deviation_sigma: 5.0,
                     });
                     tracing::warn!(machine = %machine_id, "port scan detected");
+                    if let Some(ref wh) = self.webhook {
+                        wh.send_mutation(&mutation);
+                    }
                     self.mutations.push(mutation);
                 }
 
@@ -194,10 +200,17 @@ impl AppState {
                         "mutation detected"
                     );
 
+                    if let Some(ref wh) = self.webhook {
+                        wh.send_mutation(&mutation);
+                    }
+
                     // Feed to lateral detector
                     let dest_ips = vec![event.dest_ip.to_string()];
                     if let Some(chain) = self.lateral_detector.record_mutation(&mutation, dest_ips)
                     {
+                        if let Some(ref wh) = self.webhook {
+                            wh.send_chain(&chain);
+                        }
                         self.chains.push(chain);
                     }
 
