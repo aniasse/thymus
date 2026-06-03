@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Thymus — Connexion</title>
+    <link rel="icon" type="image/png" href="/static/favicon.png">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
@@ -24,7 +25,7 @@
             text-align: center;
         }
         .logo { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: 0.05em; }
-        .logo span { color: #3b82f6; }
+        .logo img { width: 48px; height: 48px; display: block; margin: 0 auto 0.5rem; }
         .subtitle { color: #64748b; font-size: 0.85rem; margin-bottom: 1.5rem; }
         input {
             width: 100%;
@@ -55,7 +56,7 @@
 </head>
 <body>
     <div class="login-box">
-        <div class="logo"><span>θ</span> Thymus</div>
+        <div class="logo"><img src="/static/logo.png" alt="Thymus">Thymus</div>
         <div class="subtitle">Système immunitaire réseau</div>
         <input type="password" id="token" placeholder="Token d'accès" autofocus>
         <button onclick="login()">Connexion</button>
