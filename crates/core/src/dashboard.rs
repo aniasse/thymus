@@ -8,11 +8,14 @@ pub fn router() -> Router<CoreState> {
         .route("/", get(status_page))
         .route("/mutations", get(mutations_page))
         .route("/machines", get(machines_page))
+        .route("/network", get(network_page))
         .route("/partials/status-cards", get(partial_status_cards))
         .route("/partials/profiles-summary", get(partial_profiles_summary))
         .route("/partials/recent-mutations", get(partial_recent_mutations))
         .route("/partials/mutations-full", get(partial_mutations_full))
         .route("/partials/machines-list", get(partial_machines_list))
+        .route("/partials/network-graph", get(partial_network_graph))
+        .route("/partials/chains", get(partial_chains))
 }
 
 // --- Full pages ---
@@ -39,6 +42,14 @@ struct MachinesPage;
 
 async fn machines_page() -> Html<String> {
     Html(MachinesPage.render().unwrap_or_default())
+}
+
+#[derive(Template)]
+#[template(path = "network.html")]
+struct NetworkPage;
+
+async fn network_page() -> Html<String> {
+    Html(NetworkPage.render().unwrap_or_default())
 }
 
 // --- Partials (HTMX) ---
@@ -265,4 +276,197 @@ async fn partial_machines_list(State(state): State<CoreState>) -> Html<String> {
             .render()
             .unwrap_or_default(),
     )
+}
+
+// --- Network Graph ---
+
+struct GraphNode {
+    label: String,
+    x: u32,
+    y: u32,
+    y_label: u32,
+    y_sub: u32,
+    peer_count: usize,
+    maturity_pct: u8,
+    has_mutation: bool,
+}
+
+struct GraphEdge {
+    x1: u32,
+    y1: u32,
+    x2: u32,
+    y2: u32,
+    is_anomalous: bool,
+}
+
+struct ChainPath {
+    points: String,
+}
+
+#[derive(Template)]
+#[template(path = "partials/network_graph.html")]
+struct NetworkGraphPartial {
+    nodes: Vec<GraphNode>,
+    edges: Vec<GraphEdge>,
+    chain_paths: Vec<ChainPath>,
+}
+
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+async fn partial_network_graph(State(state): State<CoreState>) -> Html<String> {
+    let s = state.app.read().await;
+    let machine_ids: Vec<String> = s.profiles.keys().cloned().collect();
+    let machine_count = machine_ids.len();
+
+    if machine_count == 0 {
+        return Html(
+            NetworkGraphPartial {
+                nodes: vec![],
+                edges: vec![],
+                chain_paths: vec![],
+            }
+            .render()
+            .unwrap_or_default(),
+        );
+    }
+
+    let active_mutation_machines: std::collections::HashSet<String> = s
+        .active_mutations()
+        .iter()
+        .map(|m| m.machine_id.clone())
+        .collect();
+
+    // Place nodes in a circle
+    let cx = 400.0_f64;
+    let cy = 250.0;
+    let radius = 150.0;
+
+    let mut node_positions: std::collections::HashMap<String, (u32, u32)> =
+        std::collections::HashMap::new();
+
+    let nodes: Vec<GraphNode> = machine_ids
+        .iter()
+        .enumerate()
+        .map(|(i, mid)| {
+            let angle = 2.0 * std::f64::consts::PI * (i as f64) / (machine_count as f64)
+                - std::f64::consts::FRAC_PI_2;
+            let x = (cx + radius * angle.cos()) as u32;
+            let y = (cy + radius * angle.sin()) as u32;
+            node_positions.insert(mid.clone(), (x, y));
+
+            let profile = &s.profiles[mid];
+            let label = if mid.len() > 16 {
+                format!("{}…", &mid[..14])
+            } else {
+                mid.clone()
+            };
+
+            GraphNode {
+                label,
+                x,
+                y,
+                y_label: y + 4,
+                y_sub: y + 36,
+                peer_count: profile.relational.known_peers.len(),
+                maturity_pct: (profile.profile_maturity * 100.0) as u8,
+                has_mutation: active_mutation_machines.contains(mid),
+            }
+        })
+        .collect();
+
+    // Build edges from shared peers
+    let mut edges = Vec::new();
+    let ids: Vec<&String> = machine_ids.iter().collect();
+    for i in 0..ids.len() {
+        for j in (i + 1)..ids.len() {
+            let p1 = &s.profiles[ids[i]];
+            let p2 = &s.profiles[ids[j]];
+
+            let shared = p1.relational.known_peers.iter().any(|peer| {
+                p2.relational
+                    .known_peers
+                    .iter()
+                    .any(|p| p.peer_ip == peer.peer_ip)
+            });
+
+            if shared {
+                let (x1, y1) = node_positions[ids[i]];
+                let (x2, y2) = node_positions[ids[j]];
+                let is_anomalous = active_mutation_machines.contains(ids[i])
+                    && active_mutation_machines.contains(ids[j]);
+                edges.push(GraphEdge {
+                    x1,
+                    y1,
+                    x2,
+                    y2,
+                    is_anomalous,
+                });
+            }
+        }
+    }
+
+    // Chain paths
+    let chain_paths: Vec<ChainPath> = s
+        .active_chains()
+        .iter()
+        .filter_map(|chain| {
+            let points: Vec<String> = chain
+                .path
+                .iter()
+                .filter_map(|link| {
+                    node_positions
+                        .get(&link.machine_id)
+                        .map(|(x, y)| format!("{x},{y}"))
+                })
+                .collect();
+
+            if points.len() >= 2 {
+                Some(ChainPath {
+                    points: points.join(" "),
+                })
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    Html(
+        NetworkGraphPartial {
+            nodes,
+            edges,
+            chain_paths,
+        }
+        .render()
+        .unwrap_or_default(),
+    )
+}
+
+// --- Chains partial ---
+
+struct ChainRow {
+    path_str: String,
+    score_pct: u8,
+    links: usize,
+    detected_at: String,
+}
+
+#[derive(Template)]
+#[template(path = "partials/chains.html")]
+struct ChainsPartial {
+    chains: Vec<ChainRow>,
+}
+
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+async fn partial_chains(State(state): State<CoreState>) -> Html<String> {
+    let s = state.app.read().await;
+    let chains: Vec<ChainRow> = s
+        .active_chains()
+        .iter()
+        .map(|c| ChainRow {
+            path_str: c.path_str(),
+            score_pct: (c.chain_score * 100.0) as u8,
+            links: c.path.len(),
+            detected_at: c.detected_at.format("%H:%M:%S").to_string(),
+        })
+        .collect();
+    Html(ChainsPartial { chains }.render().unwrap_or_default())
 }

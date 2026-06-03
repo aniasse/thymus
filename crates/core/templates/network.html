@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Cartographie{% endblock %}
+
+{% block content %}
+<h1>Cartographie réseau</h1>
+
+<div class="panel">
+    <div class="panel-title">Topologie</div>
+    <div id="network-graph" hx-get="/partials/network-graph" hx-trigger="load, every 10s" hx-swap="innerHTML">
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-title">Chaînes latérales</div>
+    <div id="chains" hx-get="/partials/chains" hx-trigger="load, every 5s" hx-swap="innerHTML">
+    </div>
+</div>
+{% endblock %}

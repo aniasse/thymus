@@ -1,0 +1,51 @@
+{% if nodes.is_empty() %}
+<p class="text-muted text-sm">Aucune machine enregistrée.</p>
+{% else %}
+<svg viewBox="0 0 800 500" style="width: 100%; height: 400px; background: var(--bg); border-radius: 0.5rem;">
+    <!-- Edges -->
+    {% for edge in edges %}
+    <line x1="{{ edge.x1 }}" y1="{{ edge.y1 }}" x2="{{ edge.x2 }}" y2="{{ edge.y2 }}"
+          stroke="{% if edge.is_anomalous %}#ef4444{% else %}#1e293b{% endif %}"
+          stroke-width="{% if edge.is_anomalous %}2{% else %}1{% endif %}"
+          stroke-dasharray="{% if edge.is_anomalous %}5,5{% endif %}" />
+    {% endfor %}
+
+    <!-- Nodes -->
+    {% for node in nodes %}
+    <g>
+        <circle cx="{{ node.x }}" cy="{{ node.y }}" r="20"
+                fill="{% if node.has_mutation %}rgba(239,68,68,0.2){% else %}rgba(59,130,246,0.15){% endif %}"
+                stroke="{% if node.has_mutation %}#ef4444{% else %}#3b82f6{% endif %}"
+                stroke-width="2" />
+        <text x="{{ node.x }}" y="{{ node.y_label }}" text-anchor="middle"
+              fill="#e2e8f0" font-size="11" font-family="system-ui">
+            {{ node.label }}
+        </text>
+        <text x="{{ node.x }}" y="{{ node.y_sub }}" text-anchor="middle"
+              fill="#64748b" font-size="9" font-family="system-ui">
+            {{ node.peer_count }}p · {{ node.maturity_pct }}%
+        </text>
+    </g>
+    {% endfor %}
+
+    <!-- Chain paths -->
+    {% for chain in chain_paths %}
+    <polyline points="{{ chain.points }}"
+              fill="none" stroke="#ef4444" stroke-width="3"
+              stroke-dasharray="8,4" opacity="0.8"
+              marker-end="url(#arrowhead)" />
+    {% endfor %}
+
+    <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" />
+        </marker>
+    </defs>
+</svg>
+
+<div class="flex gap-2 mt-1 text-sm text-muted">
+    <span>● <span style="color: #3b82f6;">Normal</span></span>
+    <span>● <span style="color: #ef4444;">Mutation active</span></span>
+    <span>--- Chemin d'attaque</span>
+</div>
+{% endif %}

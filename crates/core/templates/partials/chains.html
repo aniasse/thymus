@@ -1,0 +1,15 @@
+{% if chains.is_empty() %}
+<p class="text-muted text-sm">Aucun déplacement latéral détecté.</p>
+{% else %}
+{% for chain in chains %}
+<div class="panel" style="border-left: 3px solid var(--red); margin-bottom: 0.75rem;">
+    <div class="flex items-center gap-2" style="justify-content: space-between;">
+        <div>
+            <span class="badge badge-red">{{ chain.score_pct }}%</span>
+            <span class="mono" style="margin-left: 0.5rem;">{{ chain.path_str }}</span>
+        </div>
+        <span class="text-sm text-muted">{{ chain.links }} étapes · {{ chain.detected_at }}</span>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
