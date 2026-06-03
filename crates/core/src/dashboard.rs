@@ -386,10 +386,13 @@ async fn partial_network_graph(State(state): State<CoreState>) -> Html<String> {
             node_positions.insert(mid.clone(), (x, y));
 
             let profile = &s.profiles[mid];
-            let label = if mid.len() > 16 {
-                format!("{}…", &mid[..14])
+            // Prefer the resolved hostname over the raw IP for the label.
+            let display = &profile.hostname;
+            let label = if display.chars().count() > 16 {
+                let truncated: String = display.chars().take(14).collect();
+                format!("{truncated}…")
             } else {
-                mid.clone()
+                display.clone()
             };
 
             GraphNode {

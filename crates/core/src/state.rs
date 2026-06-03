@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::net::IpAddr;
 use thymos_common::{
     CollectionMode, ConnectionDirection, Discovery, EventBatch, LateralChain, MachineIdentity,
@@ -26,6 +26,8 @@ pub struct AppState {
     pub scan_detector: PortScanDetector,
     pub lateral_detector: LateralDetector,
     pub webhook: Option<WebhookConfig>,
+    /// IP-keyed devices whose reverse-DNS lookup failed; skipped on later passes.
+    resolution_failed: HashSet<String>,
     batches_since_save: u32,
 }
 
@@ -66,6 +68,7 @@ impl AppState {
             scan_detector: PortScanDetector::default(),
             lateral_detector: LateralDetector::new(),
             webhook: None,
+            resolution_failed: HashSet::new(),
             batches_since_save: 0,
         };
 
@@ -377,6 +380,40 @@ impl AppState {
         thymos_detection::clonal::ClonalSelection::optimize(&mut cells);
         self.memory.replace_cells(cells);
     }
+
+    /// IP-keyed devices (passive) still labelled by their raw IP and not yet
+    /// marked as resolution-failed. Host devices (`machine_id` is a hostname, not
+    /// an IP) are naturally excluded.
+    pub fn unresolved_ips(&self, limit: usize) -> Vec<String> {
+        self.profiles
+            .values()
+            .filter(|p| {
+                p.hostname == p.machine_id
+                    && p.machine_id.parse::<IpAddr>().is_ok()
+                    && !self.resolution_failed.contains(&p.machine_id)
+            })
+            .take(limit)
+            .map(|p| p.machine_id.clone())
+            .collect()
+    }
+
+    /// Apply reverse-DNS results: set the hostname when resolved, otherwise record
+    /// the failure so we don't keep retrying a device with no PTR record.
+    pub fn apply_resolution(&mut self, results: Vec<(String, Option<String>)>) {
+        for (ip, name) in results {
+            match name {
+                Some(hostname) => {
+                    if let Some(profile) = self.profiles.get_mut(&ip) {
+                        tracing::info!(ip = %ip, hostname = %hostname, "device hostname resolved");
+                        profile.hostname = hostname;
+                    }
+                }
+                None => {
+                    self.resolution_failed.insert(ip);
+                }
+            }
+        }
+    }
 }
 
 /// Whether an address belongs to a local network we should profile as a device.
@@ -488,5 +525,56 @@ mod tests {
         // Host mode keys the profile by sensor_id, not by IP
         assert!(s.profiles.contains_key("host-a"));
         assert!(!s.profiles.contains_key("192.168.1.50"));
+    }
+
+    #[test]
+    fn unresolved_ips_targets_only_passive_devices() {
+        let mut s = temp_state();
+        // A passive (IP-keyed) device and a host device in one go.
+        let mut passive = EventBatch::new_passive("span".into());
+        passive
+            .network_events
+            .push(passive_event("192.168.1.50", "192.168.1.10", 443, 100, 100));
+        s.ingest_batch(&passive);
+
+        let mut host = EventBatch::new("host-a".into());
+        host.network_events
+            .push(passive_event("192.168.1.50", "192.168.1.10", 443, 100, 100));
+        s.ingest_batch(&host);
+
+        let unresolved = s.unresolved_ips(50);
+        // Only IP-keyed devices are candidates; "host-a" (a hostname) is excluded.
+        assert!(unresolved.contains(&"192.168.1.50".to_string()));
+        assert!(unresolved.contains(&"192.168.1.10".to_string()));
+        assert!(!unresolved.contains(&"host-a".to_string()));
+    }
+
+    #[test]
+    fn apply_resolution_updates_hostname_and_records_failures() {
+        let mut s = temp_state();
+        let mut batch = EventBatch::new_passive("span".into());
+        batch.network_events.push(passive_event(
+            "192.168.1.77",
+            "192.168.1.10",
+            9100,
+            100,
+            100,
+        ));
+        s.ingest_batch(&batch);
+
+        // .77 resolves to a printer name, .10 has no PTR record
+        s.apply_resolution(vec![
+            ("192.168.1.77".into(), Some("imprimante-rh.local".into())),
+            ("192.168.1.10".into(), None),
+        ]);
+
+        assert_eq!(s.profiles["192.168.1.77"].hostname, "imprimante-rh.local");
+        // .10 keeps its IP as hostname and is no longer offered for resolution
+        assert_eq!(s.profiles["192.168.1.10"].hostname, "192.168.1.10");
+
+        let unresolved = s.unresolved_ips(50);
+        assert!(!unresolved.contains(&"192.168.1.10".to_string()));
+        // .77 is resolved (hostname != machine_id) so also no longer a candidate
+        assert!(!unresolved.contains(&"192.168.1.77".to_string()));
     }
 }

@@ -4,6 +4,7 @@ mod auth;
 mod dashboard;
 mod db;
 mod profiler;
+mod resolver;
 mod state;
 
 use anyhow::Result;
@@ -71,6 +72,30 @@ async fn main() -> Result<()> {
             interval.tick().await;
             let mut s = clonal_state.write().await;
             s.run_clonal_selection();
+        }
+    });
+
+    // Reverse-DNS: give passive (IP-keyed) devices friendly hostnames
+    let resolve_state = app_state.clone();
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(60));
+        loop {
+            interval.tick().await;
+            let ips = resolve_state.read().await.unresolved_ips(50);
+            if ips.is_empty() {
+                continue;
+            }
+            let resolved = tokio::task::spawn_blocking(move || {
+                ips.into_iter()
+                    .map(|ip| {
+                        let name = ip.parse().ok().and_then(resolver::reverse_lookup);
+                        (ip, name)
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .await
+            .unwrap_or_default();
+            resolve_state.write().await.apply_resolution(resolved);
         }
     });
 

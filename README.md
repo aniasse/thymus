@@ -64,6 +64,10 @@ Le sensor passif n'analyse que les **métadonnées de flux** (qui parle à qui, 
 combien) — jamais le contenu des paquets. Le Core profile chaque appareil local
 (RFC1918) par son IP et construit l'ADN relationnel de l'écosystème complet.
 
+Les appareils découverts passivement sont **étiquetés par résolution DNS inverse**
+(PTR) quand le réseau le permet, et leur **type est inféré** depuis les ports servis
+(imprimante, caméra IP, base de données, automate industriel, etc.).
+
 ## Dashboard
 
 Le Core sert un dashboard web (HTMX, zéro build JS) directement sur le port d'écoute :
