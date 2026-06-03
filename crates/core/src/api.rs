@@ -31,6 +31,7 @@ pub fn router(app: Arc<RwLock<AppState>>, db: Arc<Db>) -> Router {
             post(false_positive_mutation),
         )
         .route("/api/profiles", get(list_profiles))
+        .route("/api/chains", get(list_chains))
         .route("/api/activate", post(activate))
         .with_state(state)
 }
@@ -156,4 +157,31 @@ async fn activate(State(state): State<CoreState>) -> &'static str {
     s.activate();
     s.save_to_db(&state.db);
     "activated"
+}
+
+#[derive(Serialize)]
+struct ChainResponse {
+    id: String,
+    path: Vec<String>,
+    path_str: String,
+    chain_score: f64,
+    detected_at: String,
+    links: usize,
+}
+
+async fn list_chains(State(state): State<CoreState>) -> Json<Vec<ChainResponse>> {
+    let s = state.app.read().await;
+    Json(
+        s.active_chains()
+            .iter()
+            .map(|c| ChainResponse {
+                id: c.id.to_string(),
+                path: c.path.iter().map(|l| l.machine_id.clone()).collect(),
+                path_str: c.path_str(),
+                chain_score: c.chain_score,
+                detected_at: c.detected_at.to_rfc3339(),
+                links: c.path.len(),
+            })
+            .collect(),
+    )
 }

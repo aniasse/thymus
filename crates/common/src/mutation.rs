@@ -58,6 +58,62 @@ pub enum ResponseLevel {
     Isolate = 4,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LateralChain {
+    pub id: Uuid,
+    pub detected_at: DateTime<Utc>,
+    pub path: Vec<ChainLink>,
+    pub chain_score: f64,
+    pub status: MutationStatus,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChainLink {
+    pub machine_id: String,
+    pub mutation_id: Uuid,
+    pub timestamp: DateTime<Utc>,
+    pub dest_ip: String,
+    pub risk_score: f64,
+}
+
+impl LateralChain {
+    pub fn new(first: ChainLink) -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            detected_at: Utc::now(),
+            path: vec![first],
+            chain_score: 0.0,
+            status: MutationStatus::Active,
+        }
+    }
+
+    pub fn add_link(&mut self, link: ChainLink) {
+        self.path.push(link);
+        self.recompute_score();
+    }
+
+    fn recompute_score(&mut self) {
+        let product: f64 = self.path.iter().map(|l| 1.0 - l.risk_score).product();
+        self.chain_score = (1.0 - product).min(1.0);
+    }
+
+    pub fn involves_machine(&self, machine_id: &str) -> bool {
+        self.path.iter().any(|l| l.machine_id == machine_id)
+    }
+
+    pub fn last_machine(&self) -> Option<&str> {
+        self.path.last().map(|l| l.machine_id.as_str())
+    }
+
+    pub fn path_str(&self) -> String {
+        self.path
+            .iter()
+            .map(|l| l.machine_id.as_str())
+            .collect::<Vec<_>>()
+            .join(" → ")
+    }
+}
+
 impl Mutation {
     pub fn new(machine_id: String) -> Self {
         Self {

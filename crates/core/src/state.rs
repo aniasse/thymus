@@ -1,20 +1,23 @@
 use std::collections::HashMap;
 use thymos_common::{
-    ConnectionDirection, EventBatch, MachineIdentity, Mutation, MutationDimension, MutationStatus,
-    NetworkEvent, PeerProfile,
+    ConnectionDirection, EventBatch, LateralChain, MachineIdentity, Mutation, MutationDimension,
+    MutationStatus, NetworkEvent, PeerProfile,
 };
 use thymos_detection::ImmuneEngine;
 use thymos_detection::innate::PortScanDetector;
+use thymos_detection::lateral::LateralDetector;
 
 use crate::profiler;
 
 pub struct AppState {
     pub profiles: HashMap<String, MachineIdentity>,
     pub mutations: Vec<Mutation>,
+    pub chains: Vec<LateralChain>,
     pub event_count: u64,
     pub engine: ImmuneEngine,
     pub phase: Phase,
     pub scan_detector: PortScanDetector,
+    pub lateral_detector: LateralDetector,
     batches_since_save: u32,
 }
 
@@ -40,10 +43,12 @@ impl AppState {
         let state = Self {
             profiles,
             mutations,
+            chains: Vec::new(),
             event_count,
             engine: ImmuneEngine::new(),
             phase,
             scan_detector: PortScanDetector::default(),
+            lateral_detector: LateralDetector::new(),
             batches_since_save: 0,
         };
 
@@ -128,6 +133,14 @@ impl AppState {
                         score = mutation.risk_score,
                         "mutation detected"
                     );
+
+                    // Feed to lateral detector
+                    let dest_ips = vec![event.dest_ip.to_string()];
+                    if let Some(chain) = self.lateral_detector.record_mutation(&mutation, dest_ips)
+                    {
+                        self.chains.push(chain);
+                    }
+
                     self.mutations.push(mutation);
                 }
             }
@@ -198,6 +211,13 @@ impl AppState {
         self.mutations
             .iter()
             .filter(|m| m.status == MutationStatus::Active)
+            .collect()
+    }
+
+    pub fn active_chains(&self) -> Vec<&LateralChain> {
+        self.chains
+            .iter()
+            .filter(|c| c.status == MutationStatus::Active)
             .collect()
     }
 }
