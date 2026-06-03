@@ -1,5 +1,5 @@
 use anyhow::Result;
-use thymos_common::EventBatch;
+use thymus_common::EventBatch;
 use tracing::{info, warn};
 
 pub struct CoreSender {

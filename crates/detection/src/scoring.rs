@@ -1,4 +1,4 @@
-use thymos_common::{MachineIdentity, MutationDetail, MutationDimension, NetworkEvent};
+use thymus_common::{MachineIdentity, MutationDetail, MutationDimension, NetworkEvent};
 
 pub fn combine_scores(innate: f64, adaptive: f64) -> f64 {
     let base = innate.max(adaptive);

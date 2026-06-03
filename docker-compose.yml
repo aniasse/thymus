@@ -1,7 +1,7 @@
 services:
   core:
     build: .
-    command: thymos-core --listen 0.0.0.0:9443 --data-dir /data
+    command: thymus-core --listen 0.0.0.0:9443 --data-dir /data
     ports:
       - "9443:9443"
     volumes:

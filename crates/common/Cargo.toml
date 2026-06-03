@@ -1,5 +1,5 @@
 [package]
-name = "thymos-common"
+name = "thymus-common"
 version.workspace = true
 edition.workspace = true
 

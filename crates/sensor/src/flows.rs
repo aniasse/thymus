@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 use std::net::IpAddr;
-use thymos_common::{NetworkEvent, Protocol};
+use thymus_common::{NetworkEvent, Protocol};
 use uuid::Uuid;
 
 /// A single parsed packet's flow-relevant metadata (no payload content).

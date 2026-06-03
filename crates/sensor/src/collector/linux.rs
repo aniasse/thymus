@@ -1,6 +1,6 @@
 use chrono::Utc;
 use std::net::IpAddr;
-use thymos_common::{NetworkEvent, Protocol};
+use thymus_common::{NetworkEvent, Protocol};
 use uuid::Uuid;
 
 use crate::procinfo;

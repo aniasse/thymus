@@ -1,5 +1,5 @@
 use chrono::{DateTime, Duration, Utc};
-use thymos_common::{ChainLink, LateralChain, Mutation};
+use thymus_common::{ChainLink, LateralChain, Mutation};
 use uuid::Uuid;
 
 const CORRELATION_WINDOW_MINUTES: i64 = 30;
@@ -71,7 +71,7 @@ impl LateralDetector {
 
         // Try to extend existing chain
         for chain in &mut self.chains {
-            if chain.status != thymos_common::MutationStatus::Active {
+            if chain.status != thymus_common::MutationStatus::Active {
                 continue;
             }
 
@@ -121,7 +121,7 @@ impl LateralDetector {
     pub fn active_chains(&self) -> Vec<&LateralChain> {
         self.chains
             .iter()
-            .filter(|c| c.status == thymos_common::MutationStatus::Active)
+            .filter(|c| c.status == thymus_common::MutationStatus::Active)
             .collect()
     }
 }

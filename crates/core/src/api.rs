@@ -7,7 +7,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use thymos_common::{EventBatch, MutationStatus, ToleranceContext, ToleranceEntry};
+use thymus_common::{EventBatch, MutationStatus, ToleranceContext, ToleranceEntry};
 use tokio::sync::RwLock;
 
 use crate::db::Db;

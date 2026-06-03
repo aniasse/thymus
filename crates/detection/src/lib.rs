@@ -7,7 +7,7 @@ pub mod lateral;
 pub mod memory;
 pub mod scoring;
 
-use thymos_common::{MachineIdentity, Mutation, NetworkEvent};
+use thymus_common::{MachineIdentity, Mutation, NetworkEvent};
 
 pub struct ImmuneEngine {
     innate: innate::InnateLayer,

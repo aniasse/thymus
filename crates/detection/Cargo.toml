@@ -1,10 +1,10 @@
 [package]
-name = "thymos-detection"
+name = "thymus-detection"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
-thymos-common = { workspace = true }
+thymus-common = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 chrono = { workspace = true }

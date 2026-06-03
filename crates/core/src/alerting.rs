@@ -1,5 +1,5 @@
 use serde::Serialize;
-use thymos_common::{LateralChain, Mutation};
+use thymus_common::{LateralChain, Mutation};
 
 #[derive(Clone)]
 pub struct WebhookConfig {

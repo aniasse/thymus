@@ -1,15 +1,15 @@
 [package]
-name = "thymos-core"
+name = "thymus-core"
 version.workspace = true
 edition.workspace = true
 
 [[bin]]
-name = "thymos-core"
+name = "thymus-core"
 path = "src/main.rs"
 
 [dependencies]
-thymos-common = { workspace = true }
-thymos-detection = { workspace = true }
+thymus-common = { workspace = true }
+thymus-detection = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

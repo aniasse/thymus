@@ -19,7 +19,7 @@ use std::time::Duration;
 use tracing::{info, warn};
 
 #[derive(Parser)]
-#[command(name = "thymos-sensor", about = "Thymos network immune sensor")]
+#[command(name = "thymus-sensor", about = "Thymus network immune sensor")]
 struct Args {
     #[arg(long, default_value = "http://127.0.0.1:9443")]
     core_addr: String,
@@ -42,7 +42,7 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
-        .with_env_filter("thymos_sensor=info")
+        .with_env_filter("thymus_sensor=info")
         .init();
 
     let args = Args::parse();
@@ -182,9 +182,9 @@ async fn run_passive(
 async fn send_passive(
     sender: &sender::CoreSender,
     sensor_id: &str,
-    events: Vec<thymos_common::NetworkEvent>,
+    events: Vec<thymus_common::NetworkEvent>,
 ) {
-    use thymos_common::EventBatch;
+    use thymus_common::EventBatch;
 
     if events.is_empty() {
         return;

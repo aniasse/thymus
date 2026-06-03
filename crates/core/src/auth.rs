@@ -8,7 +8,7 @@ use axum::{
 
 use crate::api::CoreState;
 
-const SESSION_COOKIE: &str = "thymos_session";
+const SESSION_COOKIE: &str = "thymus_session";
 
 pub fn extract_token(req: &Request<Body>) -> Option<String> {
     // Try Authorization: Bearer <token>

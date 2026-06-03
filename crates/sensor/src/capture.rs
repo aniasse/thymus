@@ -1,6 +1,6 @@
 use anyhow::{Result, anyhow};
 use std::net::IpAddr;
-use thymos_common::Protocol;
+use thymus_common::Protocol;
 
 use pnet_datalink::{Channel, Config, DataLinkReceiver};
 use pnet_packet::Packet;

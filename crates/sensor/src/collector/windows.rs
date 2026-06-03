@@ -11,7 +11,7 @@ use std::net::IpAddr;
 use std::sync::{Arc, Mutex};
 
 use chrono::Utc;
-use thymos_common::{NetworkEvent, Protocol};
+use thymus_common::{NetworkEvent, Protocol};
 use uuid::Uuid;
 
 use ferrisetw::EventRecord;
@@ -47,7 +47,7 @@ impl NetworkCollector {
             .build();
 
         let trace = KernelTrace::new()
-            .named("Thymos-Kernel-Network".to_string())
+            .named("Thymus-Kernel-Network".to_string())
             .enable(provider)
             .start_and_process();
 

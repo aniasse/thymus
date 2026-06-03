@@ -1799,7 +1799,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "thymos-common"
+name = "thymus-common"
 version = "0.1.0"
 dependencies = [
  "chrono",
@@ -1810,7 +1810,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "thymos-core"
+name = "thymus-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -1823,8 +1823,8 @@ dependencies = [
  "rusqlite",
  "serde",
  "serde_json",
- "thymos-common",
- "thymos-detection",
+ "thymus-common",
+ "thymus-detection",
  "tokio",
  "tower-http",
  "tracing",
@@ -1833,19 +1833,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "thymos-detection"
+name = "thymus-detection"
 version = "0.1.0"
 dependencies = [
  "chrono",
  "serde",
  "serde_json",
- "thymos-common",
+ "thymus-common",
  "tracing",
  "uuid",
 ]
 
 [[package]]
-name = "thymos-sensor"
+name = "thymus-sensor"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -1857,8 +1857,8 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
- "thymos-common",
- "thymos-detection",
+ "thymus-common",
+ "thymus-detection",
  "tokio",
  "tracing",
  "tracing-subscriber",

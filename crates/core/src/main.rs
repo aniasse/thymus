@@ -17,7 +17,7 @@ use tower_http::services::ServeDir;
 use tracing::info;
 
 #[derive(Parser)]
-#[command(name = "thymos-core", about = "Thymos immune network core")]
+#[command(name = "thymus-core", about = "Thymus immune network core")]
 struct Args {
     #[arg(long, default_value = "0.0.0.0:9443")]
     listen: String,
@@ -38,7 +38,7 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
-        .with_env_filter("thymos_core=info,tower_http=info")
+        .with_env_filter("thymus_core=info,tower_http=info")
         .init();
 
     let args = Args::parse();
@@ -120,7 +120,7 @@ async fn main() -> Result<()> {
         ));
 
     let listener = tokio::net::TcpListener::bind(&args.listen).await?;
-    info!(addr = %args.listen, "thymos-core started");
+    info!(addr = %args.listen, "thymus-core started");
 
     let shutdown_state = app_state.clone();
     let shutdown_db = database.clone();

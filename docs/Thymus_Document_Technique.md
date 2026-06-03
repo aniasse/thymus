@@ -1,11 +1,11 @@
-# THYMOS
+# THYMUS
 
 ## Document de Conception Technique et Philosophique
 
 **Version** : 1.0  
 **Date** : 2 juin 2026  
-**Classification** : Confidentiel - Usage interne Thymos  
-**Destinataires** : Equipe d'ingénierie Thymos
+**Classification** : Confidentiel - Usage interne Thymus  
+**Destinataires** : Equipe d'ingénierie Thymus
 
 ---
 
@@ -14,7 +14,7 @@
 1. [Résumé exécutif](#1-résumé-exécutif)
 2. [Le problème fondamental](#2-le-problème-fondamental)
 3. [L'inspiration biologique](#3-linspiration-biologique)
-4. [La philosophie Thymos](#4-la-philosophie-thymos)
+4. [La philosophie Thymus](#4-la-philosophie-thymus)
 5. [Les 6 mécanismes immunitaires](#5-les-6-mécanismes-immunitaires)
 6. [Architecture globale](#6-architecture-globale)
 7. [Composants techniques](#7-composants-techniques)
@@ -33,13 +33,13 @@
 
 # 1. RESUME EXECUTIF
 
-Thymos est une plateforme de cybersécurité fondée sur une philosophie inédite : traiter un réseau informatique comme un organisme vivant doté d'un système immunitaire complet.
+Thymus est une plateforme de cybersécurité fondée sur une philosophie inédite : traiter un réseau informatique comme un organisme vivant doté d'un système immunitaire complet.
 
 Les solutions de cybersécurité actuelles (EDR, NDR, XDR, SIEM) fonctionnent selon un paradigme commun : elles cherchent des attaques. Elles comparent ce qu'elles observent à des bases de signatures, des indicateurs de compromission, ou des modèles statistiques d'anomalies.
 
-Thymos inverse ce paradigme.
+Thymus inverse ce paradigme.
 
-Thymos ne cherche pas les attaques. Thymos construit une identité complète du réseau -- son "Soi" -- et réagit à tout ce qui ne correspond pas à cette identité. Exactement comme le système immunitaire humain ne connaît pas toutes les maladies possibles, mais connaît intimement les cellules du corps et attaque tout ce qui n'en fait pas partie.
+Thymus ne cherche pas les attaques. Thymus construit une identité complète du réseau -- son "Soi" -- et réagit à tout ce qui ne correspond pas à cette identité. Exactement comme le système immunitaire humain ne connaît pas toutes les maladies possibles, mais connaît intimement les cellules du corps et attaque tout ce qui n'en fait pas partie.
 
 Cette approche résout un problème fondamental : comment détecter une attaque qui n'a jamais été vue, qui n'utilise aucun malware connu, qui emploie des identifiants légitimes et des outils système normaux ?
 
@@ -107,7 +107,7 @@ Ce paradigme échoue face à :
 - Les attaques lentes (exfiltration sur plusieurs semaines)
 - Les attaques sur mesure (APT ciblant une organisation spécifique)
 
-Thymos propose un paradigme inverse :
+Thymus propose un paradigme inverse :
 
 > "Nous connaissons le réseau. Nous détectons tout ce qui ne lui ressemble pas."
 
@@ -127,7 +127,7 @@ En ne cherchant pas les maladies, mais en connaissant intimement le "Soi" -- l'e
 
 ## 3.2 Les mécanismes clés
 
-Le système immunitaire humain possède plusieurs mécanismes que Thymos reproduit :
+Le système immunitaire humain possède plusieurs mécanismes que Thymus reproduit :
 
 ### Immunité innée
 
@@ -157,16 +157,16 @@ Quand un anticorps efficace est trouvé, il est massivement cloné. Les anticorp
 
 Le système apprend à ne PAS réagir aux éléments inoffensifs : nourriture, flore intestinale, cellules du corps. Sans ce mécanisme, le corps s'attaquerait lui-même (maladies auto-immunes).
 
-## 3.3 Tableau de correspondance Biologie / Thymos
+## 3.3 Tableau de correspondance Biologie / Thymus
 
-| Biologie | Thymos | Fonction |
+| Biologie | Thymus | Fonction |
 |----------|-----|----------|
 | Cellule du corps | Machine/service du réseau | Composant légitime |
 | Pathogène | Attaque, intrusion, exfiltration | Menace |
 | Anticorps | Règle de détection adaptative | Défense spécifique |
 | Peau / Muqueuses | Firewall, segmentation, règles innées | Défense générique |
 | Thymus | Phase d'apprentissage du Soi | Formation des détecteurs |
-| Lymphocyte T mémoire | Cellule mémoire Thymos | Réponse accélérée |
+| Lymphocyte T mémoire | Cellule mémoire Thymus | Réponse accélérée |
 | Réponse inflammatoire | Réponse locale du sensor | Confinement immédiat |
 | Sélection clonale | Amplification des règles efficaces | Auto-optimisation |
 | Tolérance | Apprentissage des comportements rares légitimes | Réduction des faux positifs |
@@ -176,13 +176,13 @@ Le système apprend à ne PAS réagir aux éléments inoffensifs : nourriture, f
 
 ---
 
-# 4. LA PHILOSOPHIE Thymos
+# 4. LA PHILOSOPHIE Thymus
 
 ## 4.1 Le réseau comme organisme
 
-Thymos ne considère pas le réseau comme une infrastructure technique composée de machines, de câbles et de protocoles.
+Thymus ne considère pas le réseau comme une infrastructure technique composée de machines, de câbles et de protocoles.
 
-Thymos considère le réseau comme un organisme vivant composé de :
+Thymus considère le réseau comme un organisme vivant composé de :
 
 - **Cellules** : les machines, les services, les utilisateurs
 - **Organes** : les groupes fonctionnels (département RH, finance, production)
@@ -232,7 +232,7 @@ Dans un organisme sain, les cellules se comportent conformément à leur ADN. Qu
 
 De même, quand une machine du réseau commence à agir en contradiction avec son ADN comportemental, c'est potentiellement une compromission.
 
-Thymos ne détecte pas des attaques. Thymos détecte des mutations.
+Thymus ne détecte pas des attaques. Thymus détecte des mutations.
 
 Une mutation est un changement dans l'ADN comportemental d'une machine ou d'un groupe de machines qui dépasse les variations normales observées.
 
@@ -258,11 +258,11 @@ Le thymus forme les lymphocytes T en les exposant aux protéines du corps (CMH).
 
 Le résultat : le système immunitaire possède un modèle complet de ce qui est "normal" dans le corps, et réagit à tout ce qui ne correspond pas.
 
-### Implémentation Thymos
+### Implémentation Thymus
 
-Thymos implémente une phase d'apprentissage appelée **"Phase Thymus"**.
+Thymus implémente une phase d'apprentissage appelée **"Phase Thymus"**.
 
-Pendant cette phase (2 à 4 semaines minimum), Thymos observe le réseau sans intervenir. Il construit le modèle du Soi :
+Pendant cette phase (2 à 4 semaines minimum), Thymus observe le réseau sans intervenir. Il construit le modèle du Soi :
 
 ```
 Phase Thymus
@@ -282,9 +282,9 @@ Le système construit :
 7. Baseline du métabolisme réseau global
 ```
 
-A la fin de la Phase Thymus, Thymos possède un modèle du Soi -- l'état normal du réseau dans toutes ses dimensions.
+A la fin de la Phase Thymus, Thymus possède un modèle du Soi -- l'état normal du réseau dans toutes ses dimensions.
 
-**Différence fondamentale avec les EDR/NDR** : les systèmes classiques construisent des baselines statistiques (moyennes, écarts-types). Thymos construit un modèle d'identité multidimensionnel. Ce n'est pas "cette machine transfère en moyenne 300 Mo". C'est "cette machine est une cellule de type RH, qui communique avec ces 4 pairs, via ces protocoles, à ces horaires, avec ces volumes, et qui fait partie de l'organe Ressources Humaines". Le contexte est entier.
+**Différence fondamentale avec les EDR/NDR** : les systèmes classiques construisent des baselines statistiques (moyennes, écarts-types). Thymus construit un modèle d'identité multidimensionnel. Ce n'est pas "cette machine transfère en moyenne 300 Mo". C'est "cette machine est une cellule de type RH, qui communique avec ces 4 pairs, via ces protocoles, à ces horaires, avec ces volumes, et qui fait partie de l'organe Ressources Humaines". Le contexte est entier.
 
 ### Architecture du Soi
 
@@ -324,9 +324,9 @@ Après une infection, le système immunitaire ne revient pas à zéro. Il conser
 
 C'est le principe de la vaccination : exposer le corps à une version affaiblie du pathogène pour créer des cellules mémoire sans subir la maladie.
 
-### Implémentation Thymos
+### Implémentation Thymus
 
-Thymos maintient une **Mémoire Immunitaire** locale à chaque déploiement.
+Thymus maintient une **Mémoire Immunitaire** locale à chaque déploiement.
 
 Chaque incident détecté et confirmé est transformé en une **Cellule Mémoire** :
 
@@ -366,7 +366,7 @@ MemoryCell {
 }
 ```
 
-Quand Thymos détecte une nouvelle mutation, il la compare d'abord à sa mémoire immunitaire :
+Quand Thymus détecte une nouvelle mutation, il la compare d'abord à sa mémoire immunitaire :
 
 ```
 Nouvelle mutation détectée
@@ -389,7 +389,7 @@ accélérée         normal
 
 ### Mémoire de vaccination
 
-Thymos peut être "vacciné" : on peut injecter des Cellules Mémoire issues d'incidents survenus dans d'autres déploiements Thymos (via le système immunitaire collectif, voir section 11) ou créées manuellement à partir de rapports de menaces publics (CERT, ANSSI, etc.).
+Thymus peut être "vacciné" : on peut injecter des Cellules Mémoire issues d'incidents survenus dans d'autres déploiements Thymus (via le système immunitaire collectif, voir section 11) ou créées manuellement à partir de rapports de menaces publics (CERT, ANSSI, etc.).
 
 Le réseau acquiert une immunité contre des attaques qu'il n'a jamais subies.
 
@@ -416,13 +416,13 @@ Un système qui génère trop de faux positifs est inutilisable :
 
 C'est la maladie auto-immune de la cybersécurité : le système de défense attaque l'organisme qu'il est censé protéger.
 
-### Implémentation Thymos
+### Implémentation Thymus
 
-Thymos implémente trois mécanismes de tolérance :
+Thymus implémente trois mécanismes de tolérance :
 
 #### Tolérance centrale (pendant la Phase Thymus)
 
-Pendant l'apprentissage initial, Thymos identifie les comportements rares mais légitimes :
+Pendant l'apprentissage initial, Thymus identifie les comportements rares mais légitimes :
 
 ```
 Exemples de comportements rares légitimes :
@@ -448,20 +448,20 @@ ToleranceEntry {
 
 #### Tolérance périphérique (en continu)
 
-Quand Thymos génère une alerte et que l'administrateur la marque comme faux positif, Thymos apprend :
+Quand Thymus génère une alerte et que l'administrateur la marque comme faux positif, Thymus apprend :
 
 ```
 Alerte générée → Admin marque "Faux Positif"
         |
         v
-Thymos crée une ToleranceEntry
+Thymus crée une ToleranceEntry
         |
         v
 Le même comportement ne déclenche plus d'alerte
 (ou déclenche une alerte de moindre sévérité)
 ```
 
-Mais la tolérance n'est jamais absolue. Si le comportement toléré change de nature (même source mais volume 100x supérieur, ou même type mais à un horaire radicalement différent), Thymos réactive l'alerte.
+Mais la tolérance n'est jamais absolue. Si le comportement toléré change de nature (même source mais volume 100x supérieur, ou même type mais à un horaire radicalement différent), Thymus réactive l'alerte.
 
 #### Tolérance de contexte
 
@@ -476,7 +476,7 @@ Contextes reconnus :
 - Maintenance planifiée → tolérer l'accès admin inhabituel
 ```
 
-L'administrateur peut déclarer un contexte. Thymos ajuste automatiquement ses seuils pendant la durée du contexte, puis revient au mode normal.
+L'administrateur peut déclarer un contexte. Thymus ajuste automatiquement ses seuils pendant la durée du contexte, puis revient au mode normal.
 
 ```
 POST /api/context
@@ -509,9 +509,9 @@ Les architectures de sécurité actuelles sont centralisées : les agents envoie
 
 De plus, le temps de réponse dépend du temps de communication avec le serveur central. Dans une attaque rapide (ransomware qui chiffre en minutes), ce délai peut être fatal.
 
-### Implémentation Thymos
+### Implémentation Thymus
 
-Chaque Thymos Sensor (l'agent installé sur les machines) possède une capacité de réponse locale autonome.
+Chaque Thymus Sensor (l'agent installé sur les machines) possède une capacité de réponse locale autonome.
 
 Le sensor ne se contente pas de collecter et d'envoyer des données. Il embarque :
 
@@ -524,7 +524,7 @@ Architecture du Sensor
 ======================
 
 ┌─────────────────────────────────────────┐
-│              Thymos Sensor              │
+│              Thymus Sensor              │
 │                                         │
 │  ┌──────────┐  ┌──────────────────────┐ │
 │  │Collecteur│  │ ADN local (compact)  │ │
@@ -616,9 +616,9 @@ En parallèle, les lymphocytes B qui ne reconnaissent rien ou qui reconnaissent 
 
 Résultat : le système immunitaire s'auto-optimise. Les bonnes défenses prolifèrent, les mauvaises disparaissent.
 
-### Implémentation Thymos
+### Implémentation Thymus
 
-Thymos implémente une boucle d'auto-optimisation pour ses règles de détection.
+Thymus implémente une boucle d'auto-optimisation pour ses règles de détection.
 
 Chaque règle de détection (innée ou adaptative) possède un score d'efficacité :
 
@@ -650,7 +650,7 @@ DetectionRule {
 ### Boucle d'évolution
 
 ```
-Chaque semaine, Thymos évalue ses règles :
+Chaque semaine, Thymus évalue ses règles :
 
 effectiveness = true_positives / (true_positives + false_positives + false_negatives)
 
@@ -674,7 +674,7 @@ Si effectiveness < 0.2 :
 
 Le système devient plus précis avec le temps sans intervention humaine. Les règles qui fonctionnent deviennent plus sensibles. Les règles qui génèrent du bruit sont atténuées puis éliminées.
 
-Après 6 mois de fonctionnement, le Thymos d'une organisation est un système de défense unique, optimisé spécifiquement pour ce réseau, que aucun attaquant ne peut anticiper car il est le produit de l'environnement local.
+Après 6 mois de fonctionnement, le Thymus d'une organisation est un système de défense unique, optimisé spécifiquement pour ce réseau, que aucun attaquant ne peut anticiper car il est le produit de l'environnement local.
 
 ---
 
@@ -690,11 +690,11 @@ Le système immunitaire humain possède deux couches complémentaires :
 
 Les deux couches sont indispensables. L'immunité innée contient l'infection immédiatement. L'immunité adaptative la neutralise définitivement.
 
-### Implémentation Thymos
+### Implémentation Thymus
 
 #### Couche innée (présente dès l'installation)
 
-Thymos est livré avec un ensemble de règles universelles qui fonctionnent sans apprentissage :
+Thymus est livré avec un ensemble de règles universelles qui fonctionnent sans apprentissage :
 
 ```
 Règles innées (exemples) :
@@ -718,11 +718,11 @@ SYSTEME
 - Chargement de modules noyau inconnus
 ```
 
-Ces règles sont identiques pour tous les déploiements Thymos. Elles sont maintenues et mises à jour par l'équipe Thymos.
+Ces règles sont identiques pour tous les déploiements Thymus. Elles sont maintenues et mises à jour par l'équipe Thymus.
 
 #### Couche adaptative (développée par l'apprentissage)
 
-Après la Phase Thymus, Thymos développe des règles spécifiques à ce réseau :
+Après la Phase Thymus, Thymus développe des règles spécifiques à ce réseau :
 
 ```
 Règles adaptatives (exemples pour un réseau spécifique) :
@@ -801,7 +801,7 @@ Les deux scores se combinent : un événement peut être modérément suspect du
 │              │  (chiffré)  │  (chiffré)                            │
 │              │             │                                        │
 │       ┌──────▼─────────────▼──────────────────────────┐            │
-│       │               THYMOS CORE                      │            │
+│       │               THYMUS CORE                      │            │
 │       │                                                │            │
 │       │  ┌──────────────┐  ┌──────────────────────┐   │            │
 │       │  │ Moteur       │  │ Mémoire immunitaire  │   │            │
@@ -843,7 +843,7 @@ Les deux scores se combinent : un événement peut être modérément suspect du
                     optionnel│chiffré
                              │
                     ┌────────▼────────┐
-                    │   Thymos Cloud     │
+                    │   Thymus Cloud     │
                     │   (souverain)   │
                     │                 │
                     │ • Mémoire       │
@@ -867,7 +867,7 @@ Les deux scores se combinent : un événement peut être modérément suspect du
    Si score > seuil local → réponse locale immédiate
 
 3. TRANSMISSION
-   Buffer local → gRPC chiffré → Thymos Core
+   Buffer local → gRPC chiffré → Thymus Core
    (avec compression, par lots, toutes les 5-30 secondes)
 
 4. ANALYSE CENTRALE
@@ -904,7 +904,7 @@ Les deux scores se combinent : un événement peut être modérément suspect du
 
 # 7. COMPOSANTS TECHNIQUES
 
-## 7.1 Thymos Sensor
+## 7.1 Thymus Sensor
 
 ### Responsabilités
 
@@ -1009,7 +1009,7 @@ enum SystemEventType {
 }
 ```
 
-## 7.2 Thymos Core
+## 7.2 Thymus Core
 
 ### Responsabilités
 
@@ -1057,7 +1057,7 @@ Fonctions du Core :
 
 ```
 ┌───────────────────────────────────────────────┐
-│                 Thymos Core                    │
+│                 Thymus Core                    │
 │                                               │
 │  ┌─────────────────────────────────────────┐  │
 │  │          gRPC Server (tonic)            │  │
@@ -1510,7 +1510,7 @@ les mauvaises disparaissent naturellement.
 
 ## 10.1 Le graphe du réseau
 
-Thymos construit et maintient en permanence un graphe du réseau. Ce n'est pas un scan ponctuel -- c'est un organisme vivant.
+Thymus construit et maintient en permanence un graphe du réseau. Ce n'est pas un scan ponctuel -- c'est un organisme vivant.
 
 ```
 Graphe :
@@ -1619,7 +1619,7 @@ Quand une communication traverse les frontières d'un organe de manière inhabit
 
 ## 11.1 Vision
 
-A long terme, Thymos permet à plusieurs organisations de bénéficier d'une immunité collective, comme un groupe d'individus vaccinés protège l'ensemble de la population.
+A long terme, Thymus permet à plusieurs organisations de bénéficier d'une immunité collective, comme un groupe d'individus vaccinés protège l'ensemble de la population.
 
 ## 11.2 Fonctionnement
 
@@ -1635,7 +1635,7 @@ Extraction du pattern                    │
       │                                  │
       v                                  │
 ┌─────────────┐                          │
-│  Thymos Cloud  │                          │
+│  Thymus Cloud  │                          │
 │             │──── Pattern anonymisé ───→│
 │  Mémoire    │                          │
 │  collective │                          v
@@ -1670,11 +1670,11 @@ Ce qui n'est JAMAIS partagé :
 
 Le pattern décrit la forme de la mutation, pas son contenu.
 
-## 11.4 Architecture du Thymos Cloud
+## 11.4 Architecture du Thymus Cloud
 
 ```
 ┌──────────────────────────────────────┐
-│            Thymos Cloud                  │
+│            Thymus Cloud                  │
 │       (hébergé au Sénégal)           │
 │                                      │
 │  ┌────────────────────────────┐      │
@@ -1697,7 +1697,7 @@ Le pattern décrit la forme de la mutation, pas son contenu.
 │  │                            │      │
 │  │  Envoie les nouveaux       │      │
 │  │  patterns à tous les       │      │
-│  │  déploiements Thymos          │      │
+│  │  déploiements Thymus          │      │
 │  └────────────────────────────┘      │
 │                                      │
 │  ┌────────────────────────────┐      │
@@ -1721,7 +1721,7 @@ Le pattern décrit la forme de la mutation, pas son contenu.
 
 Un employé du département RH reçoit un email de phishing. Il clique sur un lien, ce qui permet à un attaquant d'obtenir un accès distant à son poste.
 
-### Déroulement sans Thymos
+### Déroulement sans Thymus
 
 ```
 Jour 1 : L'attaquant accède au poste RH-02
@@ -1736,14 +1736,14 @@ Bilan : données financières sensibles exfiltrées.
 Détection : aucune (identifiants valides, HTTPS, pas de malware).
 ```
 
-### Déroulement avec Thymos
+### Déroulement avec Thymus
 
 ```
 Jour 1, 14h32 : L'attaquant accède au poste RH-02
-   Thymos observe : rien d'anormal, l'utilisateur est connecté normalement
+   Thymus observe : rien d'anormal, l'utilisateur est connecté normalement
 
 Jour 1, 14h45 : L'attaquant scanne le réseau depuis RH-02
-   Thymos détecte :
+   Thymus détecte :
    ● Mutation relationnelle : RH-02 tente de contacter 12 machines
      en 3 minutes (habituellement : 3 machines/jour)
    ● Score de risque : 0.65
@@ -1751,7 +1751,7 @@ Jour 1, 14h45 : L'attaquant scanne le réseau depuis RH-02
    ● Notification : admin notifié par SMS
 
 Jour 1, 15h10 : L'attaquant tente d'accéder à FIN-01 depuis RH-02
-   Thymos détecte :
+   Thymus détecte :
    ● Mutation relationnelle : RH-02 n'a JAMAIS communiqué avec FIN-01
    ● Cette connexion traverse une frontière d'organe (RH → Finance)
    ● Score de risque : 0.82
@@ -1759,7 +1759,7 @@ Jour 1, 15h10 : L'attaquant tente d'accéder à FIN-01 depuis RH-02
    ● Path Intelligence active : surveille la chaîne
 
 Jour 1, 15h15 : L'attaquant tente d'accéder à TRESOR depuis FIN-01
-   Thymos détecte :
+   Thymus détecte :
    ● Chaîne de mutations : RH-02 → FIN-01 → TRESOR
    ● Ce chemin n'a jamais existé dans l'historique du réseau
    ● Score de chaîne : 0.94
@@ -1794,7 +1794,7 @@ L'attaquant n'a jamais atteint TRESOR.
 ### Apprentissage post-incident
 
 ```
-Thymos crée une Cellule Mémoire :
+Thymus crée une Cellule Mémoire :
 {
     mutation_signature: {
         dimensions: [Relational, Relational, Volumetric],
@@ -1806,7 +1806,7 @@ Thymos crée une Cellule Mémoire :
 }
 
 Si un scénario similaire se reproduit (même pattern de progression),
-Thymos répondra en secondes au lieu de minutes.
+Thymus répondra en secondes au lieu de minutes.
 ```
 
 ---
@@ -1817,13 +1817,13 @@ Thymos répondra en secondes au lieu de minutes.
 
 Un employé de la comptabilité, mécontent, décide de copier des documents sensibles avant de quitter l'entreprise.
 
-### Déroulement avec Thymos
+### Déroulement avec Thymus
 
 ```
 Semaine 1 :
 L'employé commence à accéder à des dossiers qu'il ne consulte jamais.
 
-   Thymos détecte :
+   Thymus détecte :
    ● Mutation relationnelle : COMPTA-03 accède à des répertoires
      du serveur de fichiers qu'il n'a jamais consultés
    ● Score : 0.35 (faible, pourrait être légitime)
@@ -1832,7 +1832,7 @@ L'employé commence à accéder à des dossiers qu'il ne consulte jamais.
 Semaine 2 :
 L'employé commence à copier des fichiers sur une clé USB.
 
-   Thymos détecte :
+   Thymus détecte :
    ● Mutation volumétrique : volume local de COMPTA-03 augmente
      (copies vers périphérique USB)
    ● Combiné avec la mutation relationnelle de la semaine précédente
@@ -1842,7 +1842,7 @@ L'employé commence à copier des fichiers sur une clé USB.
 Semaine 3 :
 L'employé tente d'envoyer 15 Go par email via le webmail personnel.
 
-   Thymos détecte :
+   Thymus détecte :
    ● Mutation volumétrique majeure : volume sortant x50
    ● Destination : webmail externe (pas le mail professionnel)
    ● Horaire : 22h (hors horaires habituels pour COMPTA-03)
@@ -1875,7 +1875,7 @@ L'employé tente d'envoyer 15 Go par email via le webmail personnel.
 
 ### Point clé
 
-Aucun malware. Aucune signature. Aucun IOC. L'utilisateur utilise ses propres identifiants et des outils légitimes (USB, webmail). Un EDR classique ne voit rien. Thymos voit la mutation progressive du comportement.
+Aucun malware. Aucune signature. Aucun IOC. L'utilisateur utilise ses propres identifiants et des outils légitimes (USB, webmail). Un EDR classique ne voit rien. Thymus voit la mutation progressive du comportement.
 
 ---
 
@@ -1885,16 +1885,16 @@ Aucun malware. Aucune signature. Aucun IOC. L'utilisateur utilise ses propres id
 
 Un ransomware pénètre le réseau et tente de chiffrer les fichiers sur plusieurs serveurs.
 
-### Déroulement avec Thymos
+### Déroulement avec Thymus
 
 ```
 Minute 0 : Le ransomware s'exécute sur IT-02
 
-   Thymos détecte (couche innée) :
+   Thymus détecte (couche innée) :
    ● Processus inconnu lancé depuis /tmp
    ● Score inné : 0.6
 
-   Thymos détecte (couche adaptative) :
+   Thymus détecte (couche adaptative) :
    ● IT-02 commence à accéder massivement à des fichiers
      sur le serveur de fichiers (1000 fichiers/minute vs 50 habituels)
    ● Score adaptatif : 0.75
@@ -1904,7 +1904,7 @@ Minute 0 : Le ransomware s'exécute sur IT-02
 
 Minute 1 : Le ransomware tente de se propager
 
-   Thymos détecte :
+   Thymus détecte :
    ● IT-02 tente de se connecter à toutes les machines du réseau
      sur le port 445 (SMB)
    ● Mutation relationnelle explosive : 30 nouvelles connexions en 60s
@@ -1951,15 +1951,15 @@ Jour 1 : Ministère A
    L'attaquant utilise des requêtes DNS pour exfiltrer des données
    (DNS tunneling avec des sous-domaines encodés en base64)
 
-   Thymos Ministère A détecte la mutation :
+   Thymus Ministère A détecte la mutation :
    ● Volume DNS x100
    ● Sous-domaines de longueur inhabituelle
    ● Pattern : requêtes DNS régulières toutes les 5 secondes
 
    Incident résolu.
    
-   Thymos crée une Cellule Mémoire et envoie le pattern anonymisé
-   au Thymos Cloud :
+   Thymus crée une Cellule Mémoire et envoie le pattern anonymisé
+   au Thymus Cloud :
    {
        "type": "exfiltration",
        "channel": "dns",
@@ -1971,10 +1971,10 @@ Jour 1 : Ministère A
        }
    }
 
-Jour 2 : Thymos Cloud
+Jour 2 : Thymus Cloud
 
    Le pattern est validé, dédupliqué, et distribué
-   à tous les déploiements Thymos.
+   à tous les déploiements Thymus.
 
    Chaque déploiement reçoit une "vaccination" :
    une nouvelle règle de détection pour ce type de DNS tunneling.
@@ -1983,7 +1983,7 @@ Jour 3 : Banque B
 
    Un attaquant tente la même technique contre la Banque B.
 
-   Thymos Banque B possède déjà la vaccination.
+   Thymus Banque B possède déjà la vaccination.
 
    Détection en 30 secondes (au lieu de plusieurs heures).
    L'attaque est bloquée avant que la moindre donnée ne sorte.
@@ -1998,7 +1998,7 @@ Jour 3 : Banque B
 
 ## 13.1 Philosophie de l'interface
 
-L'interface Thymos n'est pas un dashboard SIEM classique rempli de graphiques illisibles.
+L'interface Thymus n'est pas un dashboard SIEM classique rempli de graphiques illisibles.
 
 L'interface est conçue pour deux publics :
 
@@ -2009,7 +2009,7 @@ L'interface est conçue pour deux publics :
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  THYMOS          Ministère des Finances          │
+│  THYMUS          Ministère des Finances          │
 │                                                                  │
 │  ┌───────────────────────────────────────────────────────────┐  │
 │  │                                                            │  │
@@ -2124,7 +2124,7 @@ L'interface est conçue pour deux publics :
 ```
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║   RAPPORT HEBDOMADAIRE Thymos                                   ║
+║   RAPPORT HEBDOMADAIRE Thymus                                   ║
 ║   Ministère des Finances - Semaine 22/2026                  ║
 ║                                                              ║
 ║   SANTE DE L'ORGANISME : BONNE                              ║
@@ -2138,7 +2138,7 @@ L'interface est conçue pour deux publics :
 ║   Incident de la semaine :                                   ║
 ║   Mardi 2 juin à 15h10, le poste RH-02 a présenté un       ║
 ║   comportement inhabituel : tentative d'accès aux           ║
-║   serveurs Finance sans précédent. Thymos a isolé la           ║
+║   serveurs Finance sans précédent. Thymus a isolé la           ║
 ║   machine en 43 minutes. Investigation en cours.            ║
 ║                                                              ║
 ║   Immunité :                                                 ║
@@ -2149,7 +2149,7 @@ L'interface est conçue pour deux publics :
 ║   Recommandations :                                          ║
 ║   • Vérifier le poste RH-02 avec l'utilisateur             ║
 ║   • Confirmer que la migration ERP prévue vendredi          ║
-║     est déclarée dans Thymos (pour éviter les faux positifs)   ║
+║     est déclarée dans Thymus (pour éviter les faux positifs)   ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 ```
@@ -2191,7 +2191,7 @@ Mois 3 : Détection v0.1
 
 ### Critère de succès
 
-Sur un lab de 5 machines virtuelles, simuler une exfiltration et vérifier que Thymos :
+Sur un lab de 5 machines virtuelles, simuler une exfiltration et vérifier que Thymus :
 1. Construit correctement les profils après 7 jours
 2. Détecte la mutation relationnelle
 3. Détecte la mutation volumétrique
@@ -2246,7 +2246,7 @@ Démo complète montrant :
 
 ### Objectif
 
-Rendre Thymos déployable en production sur un vrai réseau.
+Rendre Thymus déployable en production sur un vrai réseau.
 
 ### Livrables
 
@@ -2262,7 +2262,7 @@ Mois 8 : Opérationnel
   ├── Installation en une commande (script d'installation)
   ├── Mise à jour automatique des Sensors
   ├── Backup et restauration du Core
-  ├── Monitoring de la santé de Thymos lui-même
+  ├── Monitoring de la santé de Thymus lui-même
   └── Guide opérationnel pour les administrateurs
 
 Mois 9 : Pilote
@@ -2275,11 +2275,11 @@ Mois 9 : Pilote
 
 ### Critère de succès
 
-Thymos déployé et fonctionnel chez un partenaire pilote pendant 30 jours, avec :
+Thymus déployé et fonctionnel chez un partenaire pilote pendant 30 jours, avec :
 1. Moins de 5 faux positifs par semaine après 2 semaines
 2. Au moins 1 anomalie réelle détectée (ou confirmée qu'il n'y en a pas)
 3. Rapport hebdomadaire automatique jugé utile par l'administrateur
-4. Aucune interruption de service causée par Thymos
+4. Aucune interruption de service causée par Thymus
 
 ---
 
@@ -2293,8 +2293,8 @@ Ajouter le système collectif et préparer le déploiement multi-organisations.
 
 ```
 Mois 10 : Système collectif
-  ├── Thymos Cloud : réception de patterns anonymisés
-  ├── Thymos Cloud : distribution de vaccinations
+  ├── Thymus Cloud : réception de patterns anonymisés
+  ├── Thymus Cloud : distribution de vaccinations
   ├── Protocole d'anonymisation vérifié
   └── 2e et 3e partenaires pilotes
 
@@ -2329,7 +2329,7 @@ Trimestre 2 :
   └── Expansion premiers clients payants
 
 Trimestre 3 :
-  ├── Thymos Cloud national (si partenariat gouvernemental)
+  ├── Thymus Cloud national (si partenariat gouvernemental)
   ├── Tableau de bord multi-organisations
   └── API d'intégration avec les outils existants (SIEM, ticketing)
 
@@ -2375,17 +2375,17 @@ Le succès du projet repose sur la maîtrise de :
 
 # 16. POSITIONNEMENT STRATEGIQUE
 
-## 16.1 Ce que Thymos n'est PAS
+## 16.1 Ce que Thymus n'est PAS
 
-- Thymos n'est pas un antivirus
-- Thymos n'est pas un firewall
-- Thymos n'est pas un SIEM
-- Thymos n'est pas un EDR classique
-- Thymos n'est pas un produit d'IA
+- Thymus n'est pas un antivirus
+- Thymus n'est pas un firewall
+- Thymus n'est pas un SIEM
+- Thymus n'est pas un EDR classique
+- Thymus n'est pas un produit d'IA
 
-## 16.2 Ce que Thymos EST
+## 16.2 Ce que Thymus EST
 
-Thymos est le premier système immunitaire numérique complet :
+Thymus est le premier système immunitaire numérique complet :
 
 - Il connaît l'identité du réseau (Soi vs Non-Soi)
 - Il apprend de chaque incident (Lymphocytes T mémoire)
@@ -2397,11 +2397,11 @@ Thymos est le premier système immunitaire numérique complet :
 
 ## 16.3 La phrase de positionnement
 
-> **Thymos ne protège pas contre les attaques connues. Thymos détecte les mutations impossibles dans l'identité vivante du réseau.**
+> **Thymus ne protège pas contre les attaques connues. Thymus détecte les mutations impossibles dans l'identité vivante du réseau.**
 
 ## 16.4 Avantages concurrentiels
 
-| Dimension | Solutions classiques | Thymos |
+| Dimension | Solutions classiques | Thymus |
 |-----------|---------------------|-----|
 | Approche | Cherche les attaques | Connaît l'identité du réseau |
 | Nouveauté | Dépend des mises à jour de signatures | Détecte l'inconnu par nature |
@@ -2420,7 +2420,7 @@ Thymos est le premier système immunitaire numérique complet :
 ```protobuf
 syntax = "proto3";
 
-package thymos.sensor;
+package thymus.sensor;
 
 service SensorService {
     rpc StreamEvents(stream EventBatch) returns (stream SensorCommand);
@@ -2679,7 +2679,7 @@ Serveur Core recommandé :
 - Réseau : 1 Gbps
 ```
 
-## 17.5 Sécurité de Thymos lui-même
+## 17.5 Sécurité de Thymus lui-même
 
 ```
 Authentification :
@@ -2707,10 +2707,10 @@ Protection contre la compromission du Core :
 
 # FIN DU DOCUMENT
 
-Ce document constitue la base de conception pour le développement de Thymos. Il sera mis à jour au fur et à mesure de l'avancement du projet.
+Ce document constitue la base de conception pour le développement de Thymus. Il sera mis à jour au fur et à mesure de l'avancement du projet.
 
-Pour toute question technique, contacter l'équipe d'ingénierie Thymos.
+Pour toute question technique, contacter l'équipe d'ingénierie Thymus.
 
 ---
 
-*Thymos - Protéger l'écosystème numérique.*
+*Thymus - Protéger l'écosystème numérique.*

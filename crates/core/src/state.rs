@@ -1,14 +1,14 @@
 use std::collections::{HashMap, HashSet};
 use std::net::IpAddr;
-use thymos_common::{
+use thymus_common::{
     CollectionMode, ConnectionDirection, Discovery, EventBatch, LateralChain, MachineIdentity,
     Mutation, MutationDimension, MutationStatus, NetworkEvent, PeerProfile, ToleranceContext,
     ToleranceEntry,
 };
-use thymos_detection::ImmuneEngine;
-use thymos_detection::innate::PortScanDetector;
-use thymos_detection::lateral::LateralDetector;
-use thymos_detection::memory::ImmuneMemory;
+use thymus_detection::ImmuneEngine;
+use thymus_detection::innate::PortScanDetector;
+use thymus_detection::lateral::LateralDetector;
+use thymus_detection::memory::ImmuneMemory;
 
 use crate::alerting::WebhookConfig;
 use crate::profiler;
@@ -186,7 +186,7 @@ impl AppState {
             mutation.risk_score = 0.9;
             mutation.innate_score = 0.9;
             mutation.dimensions = vec![MutationDimension::Relational];
-            mutation.details.push(thymos_common::MutationDetail {
+            mutation.details.push(thymus_common::MutationDetail {
                 dimension: MutationDimension::Relational,
                 description: format!("{machine_id} scanne plus de 10 ports en 60s"),
                 expected_value: "< 10 ports distincts".into(),
@@ -377,7 +377,7 @@ impl AppState {
 
     pub fn run_clonal_selection(&mut self) {
         let mut cells = self.memory.take_cells();
-        thymos_detection::clonal::ClonalSelection::optimize(&mut cells);
+        thymus_detection::clonal::ClonalSelection::optimize(&mut cells);
         self.memory.replace_cells(cells);
     }
 
@@ -430,11 +430,11 @@ fn is_private(ip: &IpAddr) -> bool {
 mod tests {
     use super::*;
     use std::net::Ipv4Addr;
-    use thymos_common::Protocol;
+    use thymus_common::Protocol;
     use uuid::Uuid;
 
     fn temp_state() -> AppState {
-        let dir = std::env::temp_dir().join(format!("thymos-test-{}", Uuid::new_v4()));
+        let dir = std::env::temp_dir().join(format!("thymus-test-{}", Uuid::new_v4()));
         let db = crate::db::Db::open(&dir).unwrap();
         AppState::load_from_db(&db)
     }

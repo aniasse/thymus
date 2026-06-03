@@ -75,7 +75,7 @@ struct StatusCardsPartial {
 }
 
 async fn partial_status_cards(State(state): State<CoreState>) -> Html<String> {
-    use thymos_common::Discovery;
+    use thymus_common::Discovery;
     let s = state.app.read().await;
     let passive_count = s
         .profiles
@@ -152,7 +152,7 @@ struct RecentMutationsPartial {
 }
 
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-fn mutation_to_row(m: &thymos_common::Mutation) -> MutationRow {
+fn mutation_to_row(m: &thymus_common::Mutation) -> MutationRow {
     MutationRow {
         id: m.id.to_string(),
         machine_id: m.machine_id.clone(),
@@ -292,7 +292,7 @@ async fn partial_machines_list(State(state): State<CoreState>) -> Html<String> {
                 ),
                 daily_volume,
                 observation_days: p.observation_days,
-                is_passive: p.discovery == thymos_common::Discovery::Passive,
+                is_passive: p.discovery == thymus_common::Discovery::Passive,
                 kind: p.device_kind().to_string(),
                 peers,
             }
@@ -403,7 +403,7 @@ async fn partial_network_graph(State(state): State<CoreState>) -> Html<String> {
                 y_sub: y + 36,
                 kind: profile.device_kind().to_string(),
                 has_mutation: active_mutation_machines.contains(mid),
-                is_passive: profile.discovery == thymos_common::Discovery::Passive,
+                is_passive: profile.discovery == thymus_common::Discovery::Passive,
             }
         })
         .collect();

@@ -1,7 +1,7 @@
 mod tests {
     use chrono::Utc;
     use std::net::{IpAddr, Ipv4Addr};
-    use thymos_common::*;
+    use thymus_common::*;
     use uuid::Uuid;
 
     use crate::ImmuneEngine;

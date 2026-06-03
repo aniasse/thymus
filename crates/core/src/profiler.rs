@@ -1,5 +1,5 @@
 use chrono::{Datelike, Timelike, Utc};
-use thymos_common::{MachineIdentity, NetworkEvent};
+use thymus_common::{MachineIdentity, NetworkEvent};
 
 const MATURITY_THRESHOLD: f64 = 0.7;
 

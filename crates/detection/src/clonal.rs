@@ -1,4 +1,4 @@
-use thymos_common::MemoryCell;
+use thymus_common::MemoryCell;
 
 pub struct ClonalSelection;
 

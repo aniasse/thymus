@@ -22,7 +22,7 @@ pub struct MachineIdentity {
     pub observation_days: u32,
 }
 
-/// How a device became known to Thymos.
+/// How a device became known to Thymus.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum Discovery {
     /// An agent is installed on the device (host mode).

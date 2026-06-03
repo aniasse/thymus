@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use thymos_common::{MachineIdentity, NetworkEvent};
+use thymus_common::{MachineIdentity, NetworkEvent};
 
 const KNOWN_MALICIOUS_PORTS: &[u16] = &[4444, 5555, 6666, 1234, 31337];
 const PORT_SCAN_THRESHOLD: usize = 10;

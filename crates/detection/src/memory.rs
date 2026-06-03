@@ -1,4 +1,4 @@
-use thymos_common::{MemoryCell, Mutation, ResponseAction};
+use thymus_common::{MemoryCell, Mutation, ResponseAction};
 
 const MATCH_THRESHOLD: f64 = 0.6;
 

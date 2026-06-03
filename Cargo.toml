@@ -10,7 +10,7 @@ resolver = "2"
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
-authors = ["Thymos Team"]
+authors = ["Thymus Team"]
 license = "AGPL-3.0"
 
 [workspace.dependencies]
@@ -28,8 +28,8 @@ anyhow = "1"
 thiserror = "2"
 clap = { version = "4", features = ["derive"] }
 
-thymos-common = { path = "crates/common" }
-thymos-detection = { path = "crates/detection" }
+thymus-common = { path = "crates/common" }
+thymus-detection = { path = "crates/detection" }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

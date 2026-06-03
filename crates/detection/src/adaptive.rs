@@ -1,4 +1,4 @@
-use thymos_common::{MachineIdentity, NetworkEvent};
+use thymus_common::{MachineIdentity, NetworkEvent};
 
 pub struct AdaptiveLayer;
 

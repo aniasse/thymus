@@ -1,4 +1,4 @@
-use thymos_common::{EventBatch, NetworkEvent};
+use thymus_common::{EventBatch, NetworkEvent};
 
 pub struct EventBuffer {
     sensor_id: String,

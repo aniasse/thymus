@@ -1,4 +1,4 @@
-use thymos_common::NetworkEvent;
+use thymus_common::NetworkEvent;
 
 /// Host mode is not implemented for this platform. Passive mode (`--interface`)
 /// remains available where packet capture is supported.

@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-"""Generate a professional PDF from the Thymos technical document."""
+"""Generate a professional PDF from the Thymus technical document."""
 
 import markdown
 import weasyprint
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent
-MD_FILE = SCRIPT_DIR / "Thymos_Document_Technique.md"
-PDF_FILE = SCRIPT_DIR / "Thymos_Document_Technique.pdf"
+MD_FILE = SCRIPT_DIR / "Thymus_Document_Technique.md"
+PDF_FILE = SCRIPT_DIR / "Thymus_Document_Technique.pdf"
 
 CSS = """
 @page {
     size: A4;
     margin: 2.5cm 2cm 2.5cm 2cm;
     @top-center {
-        content: "THYMOS — Document de Conception Technique";
+        content: "THYMUS — Document de Conception Technique";
         font-size: 8pt;
         color: #666;
         font-family: 'Noto Sans', 'DejaVu Sans', sans-serif;
@@ -199,8 +199,8 @@ def main():
         <div style="width:120px; height:4px; background:#1b4965; margin:0 auto 40px;"></div>
         <div style="font-size:10pt; color:#666;">
             <p><strong>Version :</strong> 1.0 &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Date :</strong> 2 juin 2026</p>
-            <p><strong>Classification :</strong> Confidentiel — Usage interne Thymos</p>
-            <p><strong>Destinataires :</strong> Equipe d'ingénierie Thymos</p>
+            <p><strong>Classification :</strong> Confidentiel — Usage interne Thymus</p>
+            <p><strong>Destinataires :</strong> Equipe d'ingénierie Thymus</p>
         </div>
     </div>
     <div style="page-break-after: always;"></div>

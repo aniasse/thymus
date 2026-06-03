@@ -3,7 +3,7 @@ use rusqlite::Connection;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Mutex;
-use thymos_common::{
+use thymus_common::{
     ConnectionDirection, MachineIdentity, MemoryCell, Mutation, MutationStatus, PeerProfile,
     ResponseAction, ToleranceEntry,
 };
@@ -15,7 +15,7 @@ pub struct Db {
 impl Db {
     pub fn open(data_dir: &Path) -> Result<Self> {
         std::fs::create_dir_all(data_dir)?;
-        let db_path = data_dir.join("thymos.db");
+        let db_path = data_dir.join("thymus.db");
         let conn = Connection::open(db_path)?;
         conn.execute_batch(
             "
@@ -222,8 +222,8 @@ impl Db {
                 profile.last_updated = ts;
             }
             profile.discovery = match row.12.as_str() {
-                "Passive" => thymos_common::Discovery::Passive,
-                _ => thymos_common::Discovery::Agent,
+                "Passive" => thymus_common::Discovery::Passive,
+                _ => thymus_common::Discovery::Agent,
             };
 
             let mut peer_stmt = conn.prepare("SELECT * FROM peers WHERE machine_id = ?1")?;

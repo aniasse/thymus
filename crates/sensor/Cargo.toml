@@ -1,15 +1,15 @@
 [package]
-name = "thymos-sensor"
+name = "thymus-sensor"
 version.workspace = true
 edition.workspace = true
 
 [[bin]]
-name = "thymos-sensor"
+name = "thymus-sensor"
 path = "src/main.rs"
 
 [dependencies]
-thymos-common = { workspace = true }
-thymos-detection = { workspace = true }
+thymus-common = { workspace = true }
+thymus-detection = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

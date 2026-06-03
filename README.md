@@ -1,8 +1,8 @@
-# Thymos
+# Thymus
 
 **Le système immunitaire de votre réseau.**
 
-Thymos est une plateforme de cybersécurité qui traite un réseau informatique comme un organisme vivant. Au lieu de chercher des attaques connues, Thymos construit l'identité comportementale du réseau (son "Soi") et détecte toute mutation anormale.
+Thymus est une plateforme de cybersécurité qui traite un réseau informatique comme un organisme vivant. Au lieu de chercher des attaques connues, Thymus construit l'identité comportementale du réseau (son "Soi") et détecte toute mutation anormale.
 
 ## Architecture
 
@@ -29,10 +29,10 @@ crates/
 cargo build --release
 
 # Lancer le Core
-./target/release/thymos-core --listen 0.0.0.0:9443
+./target/release/thymus-core --listen 0.0.0.0:9443
 
 # Lancer le Sensor (sur chaque machine)
-./target/release/thymos-sensor --core-addr http://CORE_IP:9443
+./target/release/thymus-sensor --core-addr http://CORE_IP:9443
 
 # Vérifier le statut
 curl http://localhost:9443/api/status
@@ -51,7 +51,7 @@ native de la plateforme :
 - Autres plateformes : mode hôte non supporté (utiliser le mode passif)
 
 ```bash
-./target/release/thymos-sensor --core-addr http://CORE_IP:9443
+./target/release/thymus-sensor --core-addr http://CORE_IP:9443
 ```
 
 > L'agent Windows (ETW) est compilé et vérifié en CI (job `windows-latest`). Le
@@ -65,7 +65,7 @@ imprimantes réseau, caméras IP, équipements IoT, automates, terminaux de paie
 
 ```bash
 # Nécessite root / CAP_NET_RAW (Linux/macOS ; pas encore supporté sur Windows)
-sudo ./target/release/thymos-sensor --interface eth0 --core-addr http://CORE_IP:9443
+sudo ./target/release/thymus-sensor --interface eth0 --core-addr http://CORE_IP:9443
 ```
 
 Le sensor passif n'analyse que les **métadonnées de flux** (qui parle à qui, quand,
@@ -89,10 +89,10 @@ Le Core sert un dashboard web (HTMX, zéro build JS) directement sur le port d'�
 
 ```bash
 # Démarrer le Core avec un token
-./target/release/thymos-core --token mon-secret
+./target/release/thymus-core --token mon-secret
 
 # Les sensors doivent fournir le token
-./target/release/thymos-sensor --core-addr http://CORE_IP:9443 --token mon-secret
+./target/release/thymus-sensor --core-addr http://CORE_IP:9443 --token mon-secret
 ```
 
 Sans `--token`, l'accès est ouvert. Avec un token : le dashboard exige une connexion
@@ -101,7 +101,7 @@ Sans `--token`, l'accès est ouvert. Avec un token : le dashboard exige une conn
 ## Alerting webhook (optionnel)
 
 ```bash
-./target/release/thymos-core --webhook https://hooks.example.com/thymos --webhook-min-score 0.7
+./target/release/thymus-core --webhook https://hooks.example.com/thymus --webhook-min-score 0.7
 ```
 
 Envoie un POST JSON à chaque mutation ou chaîne latérale dépassant le score minimum.
