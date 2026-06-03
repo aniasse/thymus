@@ -68,18 +68,28 @@ async fn network_page() -> Html<String> {
 struct StatusCardsPartial {
     phase: String,
     machines: usize,
+    agent_count: usize,
+    passive_count: usize,
     total_events: u64,
     active_mutations: usize,
 }
 
 async fn partial_status_cards(State(state): State<CoreState>) -> Html<String> {
+    use thymos_common::Discovery;
     let s = state.app.read().await;
+    let passive_count = s
+        .profiles
+        .values()
+        .filter(|p| p.discovery == Discovery::Passive)
+        .count();
     let tmpl = StatusCardsPartial {
         phase: match s.phase {
             crate::state::Phase::Thymus => "thymus".into(),
             crate::state::Phase::Active => "active".into(),
         },
         machines: s.profiles.len(),
+        agent_count: s.profiles.len() - passive_count,
+        passive_count,
         total_events: s.event_count,
         active_mutations: s.active_mutations().len(),
     };
@@ -214,6 +224,8 @@ struct MachineRow {
     active_hours: String,
     daily_volume: String,
     observation_days: u32,
+    is_passive: bool,
+    kind: String,
     peers: Vec<PeerRow>,
 }
 
@@ -280,6 +292,8 @@ async fn partial_machines_list(State(state): State<CoreState>) -> Html<String> {
                 ),
                 daily_volume,
                 observation_days: p.observation_days,
+                is_passive: p.discovery == thymos_common::Discovery::Passive,
+                kind: p.device_kind().to_string(),
                 peers,
             }
         })
@@ -299,9 +313,9 @@ struct GraphNode {
     y: u32,
     y_label: u32,
     y_sub: u32,
-    peer_count: usize,
-    maturity_pct: u8,
+    kind: String,
     has_mutation: bool,
+    is_passive: bool,
 }
 
 struct GraphEdge {
@@ -384,9 +398,9 @@ async fn partial_network_graph(State(state): State<CoreState>) -> Html<String> {
                 y,
                 y_label: y + 4,
                 y_sub: y + 36,
-                peer_count: profile.relational.known_peers.len(),
-                maturity_pct: (profile.profile_maturity * 100.0) as u8,
+                kind: profile.device_kind().to_string(),
                 has_mutation: active_mutation_machines.contains(mid),
+                is_passive: profile.discovery == thymos_common::Discovery::Passive,
             }
         })
         .collect();

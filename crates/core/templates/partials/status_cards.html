@@ -6,8 +6,12 @@
         </div>
     </div>
     <div class="card">
-        <div class="card-label">Machines</div>
+        <div class="card-label">Appareils</div>
         <div class="card-value accent">{{ machines }}</div>
+        <div class="text-sm text-muted mt-1">
+            <span class="badge badge-blue">{{ agent_count }} agent</span>
+            <span class="badge badge-green">{{ passive_count }} passif</span>
+        </div>
     </div>
     <div class="card">
         <div class="card-label">Événements</div>

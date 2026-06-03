@@ -10,20 +10,29 @@
           stroke-dasharray="{% if edge.is_anomalous %}5,5{% endif %}" />
     {% endfor %}
 
-    <!-- Nodes -->
+    <!-- Nodes: circle = agent, dashed square = passive (agentless) -->
     {% for node in nodes %}
     <g>
+        {% if node.is_passive %}
+        <rect x="{{ node.x }}" y="{{ node.y }}" width="36" height="36"
+              transform="translate(-18,-18)"
+              rx="4"
+              fill="{% if node.has_mutation %}rgba(239,68,68,0.2){% else %}rgba(34,197,94,0.12){% endif %}"
+              stroke="{% if node.has_mutation %}#ef4444{% else %}#22c55e{% endif %}"
+              stroke-width="2" stroke-dasharray="4,3" />
+        {% else %}
         <circle cx="{{ node.x }}" cy="{{ node.y }}" r="20"
                 fill="{% if node.has_mutation %}rgba(239,68,68,0.2){% else %}rgba(59,130,246,0.15){% endif %}"
                 stroke="{% if node.has_mutation %}#ef4444{% else %}#3b82f6{% endif %}"
                 stroke-width="2" />
+        {% endif %}
         <text x="{{ node.x }}" y="{{ node.y_label }}" text-anchor="middle"
               fill="#e2e8f0" font-size="11" font-family="system-ui">
             {{ node.label }}
         </text>
         <text x="{{ node.x }}" y="{{ node.y_sub }}" text-anchor="middle"
               fill="#64748b" font-size="9" font-family="system-ui">
-            {{ node.peer_count }}p · {{ node.maturity_pct }}%
+            {{ node.kind }}
         </text>
     </g>
     {% endfor %}
@@ -43,8 +52,9 @@
     </defs>
 </svg>
 
-<div class="flex gap-2 mt-1 text-sm text-muted">
-    <span>● <span style="color: #3b82f6;">Normal</span></span>
+<div class="flex gap-2 mt-1 text-sm text-muted" style="flex-wrap: wrap;">
+    <span>● <span style="color: #3b82f6;">Agent</span></span>
+    <span>▢ <span style="color: #22c55e;">Passif (sans agent)</span></span>
     <span>● <span style="color: #ef4444;">Mutation active</span></span>
     <span>--- Chemin d'attaque</span>
 </div>

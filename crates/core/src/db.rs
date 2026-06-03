@@ -31,7 +31,8 @@ impl Db {
                 avg_daily_connections REAL DEFAULT 0.0,
                 hourly_volumes TEXT DEFAULT '',
                 active_days TEXT DEFAULT '',
-                last_updated TEXT NOT NULL
+                last_updated TEXT NOT NULL,
+                discovery TEXT DEFAULT 'Agent'
             );
             CREATE TABLE IF NOT EXISTS peers (
                 machine_id TEXT NOT NULL,
@@ -125,7 +126,7 @@ impl Db {
             let days_json = serde_json::to_string(&profile.temporal.active_days)?;
 
             tx.execute(
-                "INSERT INTO machines VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12)",
+                "INSERT INTO machines VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)",
                 rusqlite::params![
                     profile.machine_id,
                     profile.hostname,
@@ -139,6 +140,7 @@ impl Db {
                     hourly_json,
                     days_json,
                     profile.last_updated.to_rfc3339(),
+                    format!("{:?}", profile.discovery),
                 ],
             )?;
 
@@ -174,7 +176,7 @@ impl Db {
         let mut stmt = conn.prepare(
             "SELECT machine_id, hostname, first_seen, profile_maturity, observation_days,
              active_hour_start, active_hour_end, avg_daily_volume, avg_daily_connections,
-             hourly_volumes, active_days, last_updated FROM machines",
+             hourly_volumes, active_days, last_updated, discovery FROM machines",
         )?;
 
         let machine_rows: Vec<_> = stmt
@@ -192,6 +194,7 @@ impl Db {
                     row.get::<_, String>(9)?,
                     row.get::<_, String>(10)?,
                     row.get::<_, String>(11)?,
+                    row.get::<_, String>(12)?,
                 ))
             })?
             .flatten()
@@ -218,6 +221,10 @@ impl Db {
             if let Ok(ts) = row.11.parse() {
                 profile.last_updated = ts;
             }
+            profile.discovery = match row.12.as_str() {
+                "Passive" => thymos_common::Discovery::Passive,
+                _ => thymos_common::Discovery::Agent,
+            };
 
             let mut peer_stmt = conn.prepare("SELECT * FROM peers WHERE machine_id = ?1")?;
             let peer_rows = peer_stmt.query_map([&machine_id], |r| {

@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 use std::net::IpAddr;
 use thymos_common::{
-    CollectionMode, ConnectionDirection, EventBatch, LateralChain, MachineIdentity, Mutation,
-    MutationDimension, MutationStatus, NetworkEvent, PeerProfile, ToleranceContext, ToleranceEntry,
+    CollectionMode, ConnectionDirection, Discovery, EventBatch, LateralChain, MachineIdentity,
+    Mutation, MutationDimension, MutationStatus, NetworkEvent, PeerProfile, ToleranceContext,
+    ToleranceEntry,
 };
 use thymos_detection::ImmuneEngine;
 use thymos_detection::innate::PortScanDetector;
@@ -120,7 +121,7 @@ impl AppState {
             CollectionMode::Host => {
                 for event in &batch.network_events {
                     let machine_id = batch.sensor_id.clone();
-                    self.ensure_profile(&machine_id);
+                    self.ensure_profile(&machine_id, Discovery::Agent);
                     if self.phase == Phase::Active {
                         self.detect_on_machine(&machine_id, event);
                     }
@@ -139,12 +140,11 @@ impl AppState {
         }
     }
 
-    fn ensure_profile(&mut self, machine_id: &str) {
+    fn ensure_profile(&mut self, machine_id: &str, discovery: Discovery) {
         if !self.profiles.contains_key(machine_id) {
-            self.profiles.insert(
-                machine_id.to_string(),
-                MachineIdentity::new(machine_id.to_string(), machine_id.to_string()),
-            );
+            let mut identity = MachineIdentity::new(machine_id.to_string(), machine_id.to_string());
+            identity.discovery = discovery;
+            self.profiles.insert(machine_id.to_string(), identity);
         }
     }
 
@@ -158,7 +158,7 @@ impl AppState {
 
         if client_local {
             let client_id = event.source_ip.to_string();
-            self.ensure_profile(&client_id);
+            self.ensure_profile(&client_id, Discovery::Passive);
             if self.phase == Phase::Active {
                 self.detect_on_machine(&client_id, event);
             }
@@ -167,7 +167,7 @@ impl AppState {
 
         if server_local {
             let server_id = event.dest_ip.to_string();
-            self.ensure_profile(&server_id);
+            self.ensure_profile(&server_id, Discovery::Passive);
             self.update_profile_incoming(&server_id, event);
         }
     }

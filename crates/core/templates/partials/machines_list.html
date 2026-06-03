@@ -6,8 +6,14 @@
 {% for m in machines %}
 <div class="panel">
     <div class="flex items-center gap-2" style="justify-content: space-between;">
-        <div>
+        <div class="flex items-center gap-1">
             <span class="mono" style="font-size: 1rem; font-weight: 600;">{{ m.hostname }}</span>
+            {% if m.is_passive %}
+            <span class="badge badge-green" title="Découvert passivement, sans agent">passif</span>
+            {% else %}
+            <span class="badge badge-blue" title="Agent installé">agent</span>
+            {% endif %}
+            <span class="badge" style="background: rgba(148,163,184,0.15); color: #94a3b8;">{{ m.kind }}</span>
             <span class="text-muted text-sm" style="margin-left: 0.5rem;">{{ m.peer_count }} peers</span>
         </div>
         <div class="flex items-center gap-2">
