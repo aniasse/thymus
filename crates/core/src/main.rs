@@ -47,6 +47,17 @@ async fn main() -> Result<()> {
         }
     });
 
+    // Clonal selection: optimize memory cells periodically
+    let clonal_state = app_state.clone();
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(3600));
+        loop {
+            interval.tick().await;
+            let mut s = clonal_state.write().await;
+            s.run_clonal_selection();
+        }
+    });
+
     let static_dir = find_static_dir();
 
     let app = Router::new()

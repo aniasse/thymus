@@ -25,6 +25,14 @@ impl ImmuneMemory {
         &self.cells
     }
 
+    pub fn take_cells(&mut self) -> Vec<MemoryCell> {
+        std::mem::take(&mut self.cells)
+    }
+
+    pub fn replace_cells(&mut self, cells: Vec<MemoryCell>) {
+        self.cells = cells;
+    }
+
     pub fn consult(&self, mutation: &Mutation) -> Option<MemoryMatch> {
         let mut best_match: Option<(usize, f64)> = None;
 

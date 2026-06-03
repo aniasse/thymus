@@ -1,4 +1,5 @@
 pub mod adaptive;
+pub mod clonal;
 #[cfg(test)]
 mod engine_tests;
 pub mod innate;

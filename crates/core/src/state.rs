@@ -280,4 +280,10 @@ impl AppState {
             .filter(|c| c.status == MutationStatus::Active)
             .collect()
     }
+
+    pub fn run_clonal_selection(&mut self) {
+        let mut cells = self.memory.take_cells();
+        thymos_detection::clonal::ClonalSelection::optimize(&mut cells);
+        self.memory.replace_cells(cells);
+    }
 }
