@@ -1,0 +1,5 @@
+# Pin the toolchain so local builds and CI agree, and clippy lints don't shift
+# under our feet when a new stable ships. Bump deliberately via a dedicated PR.
+[toolchain]
+channel = "1.93.1"
+components = ["rustfmt", "clippy"]
