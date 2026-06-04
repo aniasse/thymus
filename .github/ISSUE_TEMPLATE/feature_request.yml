@@ -1,0 +1,36 @@
+name: Feature request
+description: Proposer une fonctionnalité ou amélioration
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problème / motivation
+      description: Quel besoin cette fonctionnalité adresse-t-elle ?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposition
+      description: Comment l'implémenter ? Approche, composants touchés.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives envisagées
+  - type: dropdown
+    id: component
+    attributes:
+      label: Composant principal
+      options:
+        - core
+        - sensor
+        - detection
+        - dashboard
+        - infra / CI
+        - autre
+    validations:
+      required: true
