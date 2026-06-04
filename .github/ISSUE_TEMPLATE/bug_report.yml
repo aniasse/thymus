@@ -1,0 +1,48 @@
+name: Bug report
+description: Signaler un comportement incorrect
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: Description
+      description: Que se passe-t-il ?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: Étapes pour reproduire
+      placeholder: |
+        1. Lancer `thymus-core ...`
+        2. Envoyer ...
+        3. Observer ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportement attendu
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Composant
+      options:
+        - core
+        - sensor (host/Linux)
+        - sensor (host/Windows ETW)
+        - sensor (passif)
+        - detection
+        - dashboard
+        - autre
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environnement
+      placeholder: "OS, version, mode (agent/passif)"
