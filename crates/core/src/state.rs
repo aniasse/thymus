@@ -6,6 +6,7 @@ use thymus_common::{
     ToleranceEntry,
 };
 use thymus_detection::ImmuneEngine;
+use thymus_detection::beacon::BeaconDetector;
 use thymus_detection::innate::PortScanDetector;
 use thymus_detection::lateral::LateralDetector;
 use thymus_detection::memory::ImmuneMemory;
@@ -24,6 +25,7 @@ pub struct AppState {
     pub memory: ImmuneMemory,
     pub phase: Phase,
     pub scan_detector: PortScanDetector,
+    pub beacon_detector: BeaconDetector,
     pub lateral_detector: LateralDetector,
     pub webhook: Option<WebhookConfig>,
     /// IP-keyed devices whose reverse-DNS lookup failed; skipped on later passes.
@@ -66,6 +68,7 @@ impl AppState {
             memory: ImmuneMemory::load(memory_cells),
             phase,
             scan_detector: PortScanDetector::default(),
+            beacon_detector: BeaconDetector::new(),
             lateral_detector: LateralDetector::new(),
             webhook: None,
             resolution_failed: HashSet::new(),
@@ -175,9 +178,16 @@ impl AppState {
         }
     }
 
-    /// The full immune detection pipeline for one (machine, event) pair.
-    fn detect_on_machine(&mut self, machine_id: &str, event: &NetworkEvent) {
-        // Port scan (innate, stateful)
+    fn push_mutation(&mut self, mutation: Mutation) {
+        if let Some(ref wh) = self.webhook {
+            wh.send_mutation(&mutation);
+        }
+        self.mutations.push(mutation);
+    }
+
+    /// Stateful innate detectors that don't depend on the machine profile.
+    fn detect_stateful(&mut self, machine_id: &str, event: &NetworkEvent) {
+        // Port scan
         if self
             .scan_detector
             .record(machine_id, event.dest_port, event.timestamp)
@@ -194,11 +204,45 @@ impl AppState {
                 deviation_sigma: 5.0,
             });
             tracing::warn!(machine = %machine_id, "port scan detected");
-            if let Some(ref wh) = self.webhook {
-                wh.send_mutation(&mutation);
-            }
-            self.mutations.push(mutation);
+            self.push_mutation(mutation);
         }
+
+        // C2 beaconing (periodic callback to the same destination)
+        if let Some(hit) =
+            self.beacon_detector
+                .record(machine_id, event.dest_ip, event.dest_port, event.timestamp)
+        {
+            let mut mutation = Mutation::new(machine_id.to_string());
+            mutation.risk_score = 0.7;
+            mutation.innate_score = 0.7;
+            mutation.dimensions = vec![MutationDimension::Temporal];
+            mutation.details.push(thymus_common::MutationDetail {
+                dimension: MutationDimension::Temporal,
+                description: format!(
+                    "Connexions régulières vers {}:{} toutes les {:.0}s (balise C2 probable)",
+                    hit.dest_ip, hit.dest_port, hit.interval_secs
+                ),
+                expected_value: "trafic irrégulier".into(),
+                observed_value: format!(
+                    "{} connexions, jitter {:.0}%",
+                    hit.samples,
+                    hit.regularity * 100.0
+                ),
+                deviation_sigma: 4.0,
+            });
+            tracing::warn!(
+                machine = %machine_id,
+                dest = %hit.dest_ip,
+                interval = hit.interval_secs,
+                "beaconing detected"
+            );
+            self.push_mutation(mutation);
+        }
+    }
+
+    /// The full immune detection pipeline for one (machine, event) pair.
+    fn detect_on_machine(&mut self, machine_id: &str, event: &NetworkEvent) {
+        self.detect_stateful(machine_id, event);
 
         // Dual-layer immune detection
         let profile = &self.profiles[machine_id];
@@ -576,5 +620,29 @@ mod tests {
         assert!(!unresolved.contains(&"192.168.1.10".to_string()));
         // .77 is resolved (hostname != machine_id) so also no longer a candidate
         assert!(!unresolved.contains(&"192.168.1.77".to_string()));
+    }
+
+    #[test]
+    fn beaconing_to_external_dest_flags_temporal_mutation() {
+        use chrono::Duration;
+        let mut s = temp_state();
+        s.activate(); // enable detection
+
+        // A local device beacons to an external C2 every 60s, 8 times.
+        let t0 = chrono::Utc::now();
+        for i in 0..8 {
+            let mut ev = passive_event("192.168.1.50", "203.0.113.9", 443, 200, 200);
+            ev.timestamp = t0 + Duration::seconds(60 * i);
+            let mut batch = EventBatch::new_passive("span".into());
+            batch.network_events.push(ev);
+            s.ingest_batch(&batch);
+        }
+
+        let beacon = s
+            .active_mutations()
+            .into_iter()
+            .find(|m| m.dimensions.contains(&MutationDimension::Temporal));
+        let beacon = beacon.expect("beaconing should raise a temporal mutation");
+        assert!(beacon.details[0].description.contains("balise C2"));
     }
 }
