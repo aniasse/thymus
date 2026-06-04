@@ -7,6 +7,7 @@ use thymus_common::{
 };
 use thymus_detection::ImmuneEngine;
 use thymus_detection::beacon::BeaconDetector;
+use thymus_detection::exfil::{ExfilDetector, ExfilKind};
 use thymus_detection::innate::PortScanDetector;
 use thymus_detection::lateral::LateralDetector;
 use thymus_detection::memory::ImmuneMemory;
@@ -26,6 +27,7 @@ pub struct AppState {
     pub phase: Phase,
     pub scan_detector: PortScanDetector,
     pub beacon_detector: BeaconDetector,
+    pub exfil_detector: ExfilDetector,
     pub lateral_detector: LateralDetector,
     pub webhook: Option<WebhookConfig>,
     /// IP-keyed devices whose reverse-DNS lookup failed; skipped on later passes.
@@ -69,6 +71,7 @@ impl AppState {
             phase,
             scan_detector: PortScanDetector::default(),
             beacon_detector: BeaconDetector::new(),
+            exfil_detector: ExfilDetector::new(),
             lateral_detector: LateralDetector::new(),
             webhook: None,
             resolution_failed: HashSet::new(),
@@ -240,9 +243,64 @@ impl AppState {
         }
     }
 
+    /// Data-exfiltration detection — only meaningful toward external destinations.
+    fn detect_exfil(&mut self, machine_id: &str, event: &NetworkEvent) {
+        if is_private(&event.dest_ip) {
+            return;
+        }
+
+        let Some(hit) = self.exfil_detector.record(
+            machine_id,
+            event.dest_ip,
+            event.dest_port,
+            event.bytes_sent,
+            event.bytes_recv,
+            event.timestamp,
+        ) else {
+            return;
+        };
+
+        let (description, score) = match hit.kind {
+            ExfilKind::DnsTunneling => (
+                format!(
+                    "{} octets sortants via DNS (port 53) vers {} — tunneling probable",
+                    hit.sent_bytes, hit.dest_ip
+                ),
+                0.85,
+            ),
+            ExfilKind::SlowExfiltration => (
+                format!(
+                    "Exfiltration lente vers {} : {} octets sortants en {} min",
+                    hit.dest_ip, hit.sent_bytes, hit.window_minutes
+                ),
+                0.8,
+            ),
+        };
+
+        let mut mutation = Mutation::new(machine_id.to_string());
+        mutation.risk_score = score;
+        mutation.innate_score = score;
+        mutation.dimensions = vec![MutationDimension::Volumetric];
+        mutation.details.push(thymus_common::MutationDetail {
+            dimension: MutationDimension::Volumetric,
+            description,
+            expected_value: "trafic descendant dominant".into(),
+            observed_value: format!("{} envoyés / {} reçus", hit.sent_bytes, hit.recv_bytes),
+            deviation_sigma: 5.0,
+        });
+        tracing::warn!(
+            machine = %machine_id,
+            dest = %hit.dest_ip,
+            kind = ?hit.kind,
+            "exfiltration detected"
+        );
+        self.push_mutation(mutation);
+    }
+
     /// The full immune detection pipeline for one (machine, event) pair.
     fn detect_on_machine(&mut self, machine_id: &str, event: &NetworkEvent) {
         self.detect_stateful(machine_id, event);
+        self.detect_exfil(machine_id, event);
 
         // Dual-layer immune detection
         let profile = &self.profiles[machine_id];
@@ -644,5 +702,57 @@ mod tests {
             .find(|m| m.dimensions.contains(&MutationDimension::Temporal));
         let beacon = beacon.expect("beaconing should raise a temporal mutation");
         assert!(beacon.details[0].description.contains("balise C2"));
+    }
+
+    #[test]
+    fn dns_tunneling_to_external_flags_volumetric_mutation() {
+        use chrono::Duration;
+        let mut s = temp_state();
+        s.activate();
+
+        // A device sends > 1 MB outbound on port 53 to an external resolver.
+        let t0 = chrono::Utc::now();
+        for i in 0..30 {
+            let mut ev = passive_event("192.168.1.50", "203.0.113.9", 53, 60_000, 200);
+            ev.timestamp = t0 + Duration::seconds(20 * i);
+            let mut batch = EventBatch::new_passive("span".into());
+            batch.network_events.push(ev);
+            s.ingest_batch(&batch);
+        }
+
+        let exfil = s.mutations.iter().find(|m| {
+            m.details
+                .iter()
+                .any(|d| d.description.contains("tunneling"))
+        });
+        assert!(exfil.is_some(), "DNS tunneling should raise a mutation");
+    }
+
+    #[test]
+    fn exfil_to_internal_dest_is_ignored() {
+        use chrono::Duration;
+        let mut s = temp_state();
+        s.activate();
+
+        // Large upload but to an INTERNAL destination (e.g. a backup server) —
+        // not exfiltration; the exfil detector must not fire.
+        let t0 = chrono::Utc::now();
+        for i in 0..10 {
+            let mut ev = passive_event("192.168.1.50", "192.168.1.20", 443, 15 * 1024 * 1024, 1000);
+            ev.timestamp = t0 + Duration::minutes(5 * i);
+            let mut batch = EventBatch::new_passive("span".into());
+            batch.network_events.push(ev);
+            s.ingest_batch(&batch);
+        }
+
+        let exfil = s.mutations.iter().any(|m| {
+            m.details
+                .iter()
+                .any(|d| d.description.contains("Exfiltration"))
+        });
+        assert!(
+            !exfil,
+            "internal upload must not be flagged as exfiltration"
+        );
     }
 }

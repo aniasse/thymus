@@ -3,6 +3,7 @@ pub mod beacon;
 pub mod clonal;
 #[cfg(test)]
 mod engine_tests;
+pub mod exfil;
 pub mod innate;
 pub mod lateral;
 pub mod memory;
