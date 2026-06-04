@@ -130,6 +130,7 @@ Envoie un POST JSON à chaque mutation ou chaîne latérale dépassant le score 
 | `/api/context` | POST | Déclarer un contexte (maintenance, migration) |
 | `/api/activate` | POST | Passer de la Phase Thymus au mode actif |
 | `/api/login` | POST | Obtenir une session (si token configuré) |
+| `/metrics` | GET | Métriques au format Prometheus (soumis au token) |
 
 ## Licence
 
