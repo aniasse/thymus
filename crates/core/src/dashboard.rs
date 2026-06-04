@@ -8,6 +8,7 @@ pub fn router() -> Router<CoreState> {
         .route("/", get(status_page))
         .route("/login", get(login_page))
         .route("/mutations", get(mutations_page))
+        .route("/history", get(history_page))
         .route("/machines", get(machines_page))
         .route("/network", get(network_page))
         .route("/partials/status-cards", get(partial_status_cards))
@@ -17,6 +18,7 @@ pub fn router() -> Router<CoreState> {
         .route("/partials/machines-list", get(partial_machines_list))
         .route("/partials/network-graph", get(partial_network_graph))
         .route("/partials/chains", get(partial_chains))
+        .route("/partials/history", get(partial_history))
 }
 
 // --- Full pages ---
@@ -59,6 +61,14 @@ struct NetworkPage;
 
 async fn network_page() -> Html<String> {
     Html(NetworkPage.render().unwrap_or_default())
+}
+
+#[derive(Template)]
+#[template(path = "history.html")]
+struct HistoryPage;
+
+async fn history_page() -> Html<String> {
+    Html(HistoryPage.render().unwrap_or_default())
 }
 
 // --- Partials (HTMX) ---
@@ -504,4 +514,60 @@ async fn partial_chains(State(state): State<CoreState>) -> Html<String> {
         })
         .collect();
     Html(ChainsPartial { chains }.render().unwrap_or_default())
+}
+
+// --- History partial ---
+
+struct HistoryRow {
+    detected_at: String,
+    status_label: String,
+    status_class: String,
+    risk_score: f64,
+    risk_pct: u8,
+    machine_id: String,
+    dimensions: String,
+    description: String,
+}
+
+#[derive(Template)]
+#[template(path = "partials/history.html")]
+struct HistoryPartial {
+    rows: Vec<HistoryRow>,
+}
+
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+async fn partial_history(State(state): State<CoreState>) -> Html<String> {
+    use thymus_common::MutationStatus;
+    let s = state.app.read().await;
+    let rows: Vec<HistoryRow> = s
+        .all_mutations(200)
+        .iter()
+        .map(|m| {
+            let (status_label, status_class) = match m.status {
+                MutationStatus::Active => ("Active", "badge-red"),
+                MutationStatus::Investigating => ("Investigation", "badge-yellow"),
+                MutationStatus::Resolved => ("Résolu", "badge-green"),
+                MutationStatus::FalsePositive => ("Faux positif", "badge-blue"),
+            };
+            HistoryRow {
+                detected_at: m.detected_at.format("%d/%m %H:%M:%S").to_string(),
+                status_label: status_label.to_string(),
+                status_class: status_class.to_string(),
+                risk_score: m.risk_score,
+                risk_pct: (m.risk_score * 100.0) as u8,
+                machine_id: m.machine_id.clone(),
+                dimensions: m
+                    .dimensions
+                    .iter()
+                    .map(|d| format!("{d:?}"))
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                description: m
+                    .details
+                    .first()
+                    .map_or(String::new(), |d| d.description.clone()),
+            }
+        })
+        .collect();
+    Html(HistoryPartial { rows }.render().unwrap_or_default())
 }

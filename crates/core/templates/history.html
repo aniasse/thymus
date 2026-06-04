@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Historique{% endblock %}
+{% block nav_history %}class="active"{% endblock %}
+
+{% block content %}
+<h1>Historique des incidents</h1>
+
+<div id="history" hx-get="/partials/history" hx-trigger="load, every 10s" hx-swap="innerHTML">
+</div>
+{% endblock %}

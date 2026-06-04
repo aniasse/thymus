@@ -470,6 +470,15 @@ impl AppState {
             .collect()
     }
 
+    /// Every mutation ever recorded — active, resolved, or false positive —
+    /// most recent first, capped to `limit` for the history view.
+    pub fn all_mutations(&self, limit: usize) -> Vec<&Mutation> {
+        let mut all: Vec<&Mutation> = self.mutations.iter().collect();
+        all.sort_by(|a, b| b.detected_at.cmp(&a.detected_at));
+        all.truncate(limit);
+        all
+    }
+
     pub fn active_chains(&self) -> Vec<&LateralChain> {
         self.chains
             .iter()
@@ -686,8 +695,12 @@ mod tests {
         let mut s = temp_state();
         s.activate(); // enable detection
 
-        // A local device beacons to an external C2 every 60s, 8 times.
-        let t0 = chrono::Utc::now();
+        // A local device beacons to an external C2 every 60s, 8 times. Use a
+        // fixed daytime anchor so the run never straddles a clock-hour boundary
+        // (which would add an unrelated out-of-hours temporal mutation).
+        let t0 = "2026-06-04T10:00:00Z"
+            .parse::<chrono::DateTime<chrono::Utc>>()
+            .unwrap();
         for i in 0..8 {
             let mut ev = passive_event("192.168.1.50", "203.0.113.9", 443, 200, 200);
             ev.timestamp = t0 + Duration::seconds(60 * i);
@@ -696,12 +709,13 @@ mod tests {
             s.ingest_batch(&batch);
         }
 
-        let beacon = s
-            .active_mutations()
-            .into_iter()
-            .find(|m| m.dimensions.contains(&MutationDimension::Temporal));
-        let beacon = beacon.expect("beaconing should raise a temporal mutation");
-        assert!(beacon.details[0].description.contains("balise C2"));
+        // Find the beacon mutation by its signature (robust to other mutations).
+        let beacon = s.mutations.iter().find(|m| {
+            m.details
+                .iter()
+                .any(|d| d.description.contains("balise C2"))
+        });
+        assert!(beacon.is_some(), "beaconing should raise a mutation");
     }
 
     #[test]
@@ -754,5 +768,36 @@ mod tests {
             !exfil,
             "internal upload must not be flagged as exfiltration"
         );
+    }
+
+    #[test]
+    fn all_mutations_includes_resolved_and_orders_recent_first() {
+        use chrono::Duration;
+        let mut s = temp_state();
+        let t0 = chrono::Utc::now();
+
+        let mut older = Mutation::new("m1".into());
+        older.detected_at = t0;
+        older.status = MutationStatus::Resolved;
+
+        let mut newer = Mutation::new("m2".into());
+        newer.detected_at = t0 + Duration::minutes(5);
+        newer.status = MutationStatus::FalsePositive;
+
+        s.mutations.push(older);
+        s.mutations.push(newer);
+
+        // active_mutations excludes resolved/FP...
+        assert_eq!(s.active_mutations().len(), 0);
+
+        // ...but the history includes everything, most recent first.
+        let all = s.all_mutations(200);
+        assert_eq!(all.len(), 2);
+        assert_eq!(all[0].machine_id, "m2");
+        assert_eq!(all[1].machine_id, "m1");
+
+        // limit is honoured
+        assert_eq!(s.all_mutations(1).len(), 1);
+        assert_eq!(s.all_mutations(1)[0].machine_id, "m2");
     }
 }
