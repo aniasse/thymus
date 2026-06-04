@@ -3,6 +3,7 @@ mod api;
 mod auth;
 mod dashboard;
 mod db;
+mod metrics;
 mod profiler;
 mod resolver;
 mod state;
