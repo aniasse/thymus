@@ -37,7 +37,20 @@ pub fn router(state: CoreState) -> Router {
         .route("/api/context", post(add_context))
         .route("/api/activate", post(activate))
         .route("/api/login", post(login))
+        .route("/metrics", get(metrics))
         .with_state(state)
+}
+
+async fn metrics(
+    State(state): State<CoreState>,
+) -> ([(axum::http::HeaderName, &'static str); 1], String) {
+    use axum::http::header::CONTENT_TYPE;
+    let s = state.app.read().await;
+    let snap = crate::metrics::Snapshot::from_state(&s);
+    (
+        [(CONTENT_TYPE, "text/plain; version=0.0.4")],
+        crate::metrics::render(&snap),
+    )
 }
 
 #[derive(Deserialize)]

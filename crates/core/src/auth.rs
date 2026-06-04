@@ -62,8 +62,8 @@ pub async fn require_auth(
         return next.run(req).await;
     }
 
-    // API paths → 401, browser page navs → redirect to login
-    if path.starts_with("/api/") {
+    // Machine endpoints (API, metrics scraping) → 401; browser pages → redirect.
+    if path.starts_with("/api/") || path == "/metrics" {
         (StatusCode::UNAUTHORIZED, "unauthorized").into_response()
     } else {
         Redirect::to("/login").into_response()
