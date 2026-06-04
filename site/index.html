@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thymus — Le système immunitaire de votre réseau</title>
+<meta name="description" content="Thymus est une plateforme de cybersécurité souveraine qui traite un réseau comme un organisme vivant : il apprend le comportement normal et détecte les mutations anormales avant l'attaque.">
+<link rel="icon" type="image/png" href="favicon.png">
+<meta property="og:title" content="Thymus — Le système immunitaire de votre réseau">
+<meta property="og:description" content="Cybersécurité comportementale : détecter la transformation anormale d'une infrastructure avant que l'attaque n'atteigne son objectif.">
+<meta property="og:type" content="website">
+<style>
+  :root{
+    --bg:#0a0e17; --surface:#111827; --border:#1e293b;
+    --text:#e6edf6; --muted:#8b9bb4; --accent:#3b82f6; --accent2:#6366f1;
+    --green:#22c55e;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 1.5rem}
+
+  /* nav */
+  nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);
+      background:rgba(10,14,23,.7);border-bottom:1px solid var(--border)}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:.6rem;font-weight:700;letter-spacing:.04em}
+  .brand img{width:26px;height:26px}
+  .nav-links{display:flex;gap:1.5rem;align-items:center;font-size:.9rem;color:var(--muted)}
+  .nav-links a:hover{color:var(--text)}
+  .btn{display:inline-block;padding:.6rem 1.1rem;border-radius:.55rem;font-size:.9rem;
+       font-weight:600;border:1px solid var(--border);transition:.15s}
+  .btn:hover{border-color:var(--accent);color:#fff}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn-primary:hover{opacity:.9}
+
+  /* hero */
+  .hero{text-align:center;padding:6rem 0 4rem;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;inset:0;
+    background:radial-gradient(600px 300px at 50% 0%,rgba(59,130,246,.12),transparent 70%);
+    pointer-events:none}
+  .hero img.mark{width:96px;height:96px;margin-bottom:1.5rem}
+  .hero h1{font-size:clamp(2.4rem,6vw,3.8rem);font-weight:800;letter-spacing:-.02em;margin-bottom:.5rem}
+  .hero .tagline{font-size:clamp(1.05rem,2.5vw,1.35rem);color:var(--muted);max-width:640px;margin:0 auto 2rem}
+  .hero .cta{display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap}
+
+  .pitch{max-width:760px;margin:2.5rem auto 0;padding:1.5rem 1.75rem;
+    background:var(--surface);border:1px solid var(--border);border-radius:.9rem;text-align:left}
+  .pitch strong{color:#fff}
+
+  section{padding:4rem 0}
+  .eyebrow{color:var(--accent);font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;margin-bottom:.6rem}
+  h2{font-size:clamp(1.6rem,4vw,2.2rem);font-weight:800;letter-spacing:-.01em;margin-bottom:.5rem}
+  .lead{color:var(--muted);max-width:680px;margin-bottom:2rem}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:.8rem;padding:1.4rem}
+  .card h3{font-size:1.05rem;margin-bottom:.4rem}
+  .card p{color:var(--muted);font-size:.92rem}
+  .card .ic{width:38px;height:38px;border-radius:.55rem;display:flex;align-items:center;justify-content:center;
+    background:rgba(59,130,246,.12);color:var(--accent);font-size:1.1rem;margin-bottom:.9rem}
+
+  /* flow */
+  .flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;align-items:stretch}
+  .step{background:var(--surface);border:1px solid var(--border);border-radius:.8rem;padding:1.3rem}
+  .step .n{color:var(--accent);font-weight:800;font-size:.85rem;letter-spacing:.1em}
+  .step h3{font-size:1rem;margin:.3rem 0 .3rem}
+  .step p{color:var(--muted);font-size:.9rem}
+
+  .stack{display:flex;flex-wrap:wrap;gap:.6rem}
+  .tag{padding:.4rem .8rem;border:1px solid var(--border);border-radius:9999px;font-size:.82rem;color:var(--muted)}
+
+  .closing{text-align:center;background:linear-gradient(180deg,transparent,rgba(59,130,246,.06));
+    border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+  .closing blockquote{font-size:clamp(1.2rem,3vw,1.6rem);font-weight:600;max-width:760px;margin:0 auto 1.5rem}
+  .closing blockquote span{color:var(--accent)}
+
+  footer{padding:2.5rem 0;color:var(--muted);font-size:.85rem;border-top:1px solid var(--border)}
+  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+  .sov{display:inline-flex;align-items:center;gap:.4rem;color:var(--green)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="brand"><img src="logo.png" alt=""> Thymus</div>
+    <div class="nav-links">
+      <a href="#approche">Approche</a>
+      <a href="#mecanismes">Mécanismes</a>
+      <a href="#fonctionnement">Fonctionnement</a>
+      <a class="btn" href="https://github.com/aniasse/thymus">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <img class="mark" src="logo.png" alt="Thymus">
+    <h1>Thymus</h1>
+    <p class="tagline">Le système immunitaire de votre réseau.</p>
+    <div class="cta">
+      <a class="btn btn-primary" href="https://github.com/aniasse/thymus">Voir le code</a>
+      <a class="btn" href="#approche">Découvrir l'approche</a>
+    </div>
+
+    <div class="pitch">
+      Les solutions classiques <strong>cherchent les attaques connues</strong>. Thymus fait
+      l'inverse : il apprend l'<strong>identité comportementale</strong> du réseau — son « Soi » —
+      et réagit à toute <strong>mutation impossible</strong>. Exactement comme le système immunitaire
+      humain ne connaît pas toutes les maladies, mais connaît intimement les cellules du corps.
+    </div>
+  </div>
+</header>
+
+<section id="approche">
+  <div class="wrap">
+    <div class="eyebrow">L'approche</div>
+    <h2>Un réseau est un organisme vivant</h2>
+    <p class="lead">Chaque machine possède un ADN comportemental : avec qui elle parle, quand,
+      et combien. Quand ce comportement mute brutalement, c'est le signe d'une compromission —
+      même sans malware, même avec des identifiants valides.</p>
+    <div class="grid">
+      <div class="card">
+        <div class="ic">🧬</div>
+        <h3>ADN comportemental</h3>
+        <p>Profil technique, relationnel et temporel de chaque appareil, appris en continu.</p>
+      </div>
+      <div class="card">
+        <div class="ic">🛡️</div>
+        <h3>Soi vs Non-Soi</h3>
+        <p>On ne cherche pas le mal : on vérifie en permanence que le réseau est toujours lui-même.</p>
+      </div>
+      <div class="card">
+        <div class="ic">⚡</div>
+        <h3>Détection de mutation</h3>
+        <p>Nouvelle relation, volume anormal, horaire impossible, chemin d'attaque inédit.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="mecanismes">
+  <div class="wrap">
+    <div class="eyebrow">Inspiration biologique</div>
+    <h2>Six mécanismes immunitaires</h2>
+    <p class="lead">Thymus reproduit les vrais mécanismes du système immunitaire — pas seulement la métaphore.</p>
+    <div class="grid">
+      <div class="card"><h3>Phase Thymus</h3><p>Apprentissage du Soi avant toute alerte (distinction Soi / Non-Soi).</p></div>
+      <div class="card"><h3>Cellules mémoire</h3><p>Chaque incident résolu accélère la réponse future.</p></div>
+      <div class="card"><h3>Tolérance</h3><p>Apprend à ne pas attaquer le légitime — la guerre aux faux positifs.</p></div>
+      <div class="card"><h3>Réponse locale</h3><p>Le capteur réagit immédiatement, sans attendre le serveur central.</p></div>
+      <div class="card"><h3>Sélection clonale</h3><p>Les règles efficaces sont amplifiées, les inutiles éliminées. Auto-optimisation.</p></div>
+      <div class="card"><h3>Immunité innée + adaptative</h3><p>Règles universelles immédiates + règles propres à ce réseau.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="fonctionnement">
+  <div class="wrap">
+    <div class="eyebrow">Fonctionnement</div>
+    <h2>Léger, souverain, déployable</h2>
+    <p class="lead">Des capteurs observent, un cœur en Rust analyse, un dashboard montre tout en temps réel.
+      Mode agent (Linux, Windows/ETW) ou mode passif sur port miroir — y compris les appareils sans agent
+      (imprimantes, caméras IP, IoT).</p>
+    <div class="flow">
+      <div class="step"><div class="n">01 — OBSERVER</div><h3>Capteurs</h3><p>Collectent connexions, processus et volumes. Agent ou capture passive (SPAN).</p></div>
+      <div class="step"><div class="n">02 — APPRENDRE</div><h3>Cœur immunitaire</h3><p>Construit l'ADN du réseau, détecte les mutations et les déplacements latéraux.</p></div>
+      <div class="step"><div class="n">03 — RÉAGIR</div><h3>Réponse graduée</h3><p>Surveillance, limitation, isolement — et alertes webhook.</p></div>
+      <div class="step"><div class="n">04 — VISUALISER</div><h3>Dashboard</h3><p>Cartographie vivante, mutations, types d'appareils, chaînes d'attaque.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="closing">
+  <div class="wrap">
+    <blockquote>Thymus détecte la <span>transformation anormale</span> d'une infrastructure
+      entière avant que l'attaque n'atteigne son objectif.</blockquote>
+    <a class="btn btn-primary" href="https://github.com/aniasse/thymus">Explorer le projet sur GitHub</a>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Stack technique</div>
+    <h2>Construit pour durer</h2>
+    <p class="lead">Souverain, à faible empreinte, sans dépendance cloud obligatoire.</p>
+    <div class="stack">
+      <span class="tag">Rust</span>
+      <span class="tag">Tokio · Axum</span>
+      <span class="tag">SQLite</span>
+      <span class="tag">eBPF / netlink</span>
+      <span class="tag">ETW (Windows)</span>
+      <span class="tag">Capture passive (SPAN)</span>
+      <span class="tag">HTMX · zéro build JS</span>
+      <span class="tag">AGPL-3.0</span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <div class="brand" style="margin-bottom:.4rem"><img src="logo.png" width="22" height="22" alt=""> Thymus</div>
+      <span class="sov">● Système immunitaire numérique souverain</span>
+    </div>
+    <div>
+      <a href="https://github.com/aniasse/thymus">GitHub</a> ·
+      <a href="https://github.com/aniasse/thymus/blob/main/LICENSE">AGPL-3.0</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
