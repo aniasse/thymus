@@ -1,6 +1,14 @@
-# Thymus
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="media/thymus-mark-white.png">
+    <source media="(prefers-color-scheme: light)" srcset="media/thymus-mark-dark.png">
+    <img src="media/thymus-mark-white.png" alt="Thymus" width="120">
+  </picture>
+</p>
 
-**Le système immunitaire de votre réseau.**
+<h1 align="center">Thymus</h1>
+
+<p align="center"><strong>Le système immunitaire de votre réseau.</strong></p>
 
 Thymus est une plateforme de cybersécurité qui traite un réseau informatique comme un organisme vivant. Au lieu de chercher des attaques connues, Thymus construit l'identité comportementale du réseau (son "Soi") et détecte toute mutation anormale.
 
