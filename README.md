@@ -1,12 +1,6 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="media/thymus-mark-white.png">
-    <source media="(prefers-color-scheme: light)" srcset="media/thymus-mark-dark.png">
-    <img src="media/thymus-mark-white.png" alt="Thymus" width="120">
-  </picture>
+  <img src="media/ban.png" alt="Thymus — Network Immune System" width="100%">
 </p>
-
-<h1 align="center">Thymus</h1>
 
 <p align="center"><strong>Le système immunitaire de votre réseau.</strong></p>
 
