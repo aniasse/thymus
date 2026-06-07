@@ -8,6 +8,10 @@ Thymus est une plateforme de cybersécurité qui traite un réseau informatique 
 
 ## Architecture
 
+<p align="center">
+  <img src="media/illustration.png" alt="Vue d'ensemble de Thymus" width="100%">
+</p>
+
 ```
 crates/
 ├── common/       # Types partagés : événements, profils ADN, mutations
