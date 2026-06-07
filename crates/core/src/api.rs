@@ -83,6 +83,7 @@ struct StatusResponse {
     machines: usize,
     total_events: u64,
     active_mutations: usize,
+    silenced_sensors: usize,
 }
 
 async fn status(State(state): State<CoreState>) -> Json<StatusResponse> {
@@ -95,6 +96,7 @@ async fn status(State(state): State<CoreState>) -> Json<StatusResponse> {
         machines: s.profiles.len(),
         total_events: s.event_count,
         active_mutations: s.active_mutations().len(),
+        silenced_sensors: s.silenced_sensors().len(),
     })
 }
 
