@@ -1,9 +1,10 @@
+use chrono::{DateTime, Utc};
 use std::collections::{HashMap, HashSet};
 use std::net::IpAddr;
 use thymus_common::{
     CollectionMode, ConnectionDirection, Discovery, EventBatch, LateralChain, MachineIdentity,
-    Mutation, MutationDimension, MutationStatus, NetworkEvent, PeerProfile, ToleranceContext,
-    ToleranceEntry,
+    Mutation, MutationDetail, MutationDimension, MutationStatus, NetworkEvent, PeerProfile,
+    ToleranceContext, ToleranceEntry,
 };
 use thymus_detection::ImmuneEngine;
 use thymus_detection::beacon::BeaconDetector;
@@ -11,6 +12,7 @@ use thymus_detection::exfil::{ExfilDetector, ExfilKind};
 use thymus_detection::innate::PortScanDetector;
 use thymus_detection::lateral::LateralDetector;
 use thymus_detection::memory::ImmuneMemory;
+use uuid::Uuid;
 
 use crate::alerting::WebhookConfig;
 use crate::profiler;
@@ -33,7 +35,28 @@ pub struct AppState {
     /// IP-keyed devices whose reverse-DNS lookup failed; skipped on later passes.
     resolution_failed: HashSet<String>,
     batches_since_save: u32,
+    /// Liveness tracking per agent sensor (Host mode). Rebuilt in-memory.
+    sensor_liveness: HashMap<String, SensorLiveness>,
 }
+
+/// A silenced sensor is itself a mutation: an attacker who kills the agent
+/// blinds us on that host. We learn each sensor's reporting cadence and raise
+/// a mutation when one goes quiet for far longer than usual.
+struct SensorLiveness {
+    last_seen: DateTime<Utc>,
+    /// Exponentially weighted moving average of inter-batch interval (seconds).
+    ewma_interval_secs: f64,
+    batch_count: u32,
+    /// Id of the open `SensorSilenced` mutation, if currently flagged silent.
+    silence_mutation_id: Option<Uuid>,
+}
+
+/// Don't trust the baseline until a sensor has reported this many times.
+const MIN_BATCHES_FOR_BASELINE: u32 = 5;
+/// Never flag a silence shorter than this, whatever the cadence.
+const SILENCE_FLOOR_SECS: f64 = 120.0;
+/// A sensor is silent once it exceeds this multiple of its usual interval.
+const SILENCE_INTERVAL_MULTIPLIER: f64 = 3.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Phase {
@@ -76,6 +99,7 @@ impl AppState {
             webhook: None,
             resolution_failed: HashSet::new(),
             batches_since_save: 0,
+            sensor_liveness: HashMap::new(),
         };
 
         if machine_count > 0 {
@@ -128,6 +152,7 @@ impl AppState {
 
         match batch.mode {
             CollectionMode::Host => {
+                self.record_sensor_heartbeat(&batch.sensor_id);
                 for event in &batch.network_events {
                     let machine_id = batch.sensor_id.clone();
                     self.ensure_profile(&machine_id, Discovery::Agent);
@@ -186,6 +211,94 @@ impl AppState {
             wh.send_mutation(&mutation);
         }
         self.mutations.push(mutation);
+    }
+
+    /// Record that an agent sensor just reported, updating its cadence baseline.
+    /// If the sensor was flagged silent, it recovered: resolve that mutation.
+    #[allow(clippy::cast_precision_loss)]
+    fn record_sensor_heartbeat(&mut self, sensor_id: &str) {
+        let now = Utc::now();
+        let recovered_id = {
+            let live = self
+                .sensor_liveness
+                .entry(sensor_id.to_string())
+                .or_insert_with(|| SensorLiveness {
+                    last_seen: now,
+                    ewma_interval_secs: 0.0,
+                    batch_count: 0,
+                    silence_mutation_id: None,
+                });
+
+            if live.batch_count > 0 {
+                let interval = (now - live.last_seen).num_seconds().max(0) as f64;
+                if live.batch_count == 1 {
+                    live.ewma_interval_secs = interval;
+                } else {
+                    live.ewma_interval_secs = 0.3 * interval + 0.7 * live.ewma_interval_secs;
+                }
+            }
+            live.last_seen = now;
+            live.batch_count += 1;
+            live.silence_mutation_id.take()
+        };
+
+        if let Some(id) = recovered_id {
+            if let Some(m) = self.mutations.iter_mut().find(|m| m.id == id) {
+                m.status = MutationStatus::Resolved;
+            }
+            tracing::info!(sensor = %sensor_id, "sensor recovered, silence resolved");
+        }
+    }
+
+    /// Periodic sweep: flag agent sensors that have gone quiet for far longer
+    /// than their learned cadence. Only runs in the Active phase.
+    #[allow(clippy::cast_precision_loss)]
+    pub fn check_sensor_liveness(&mut self) {
+        if self.phase != Phase::Active {
+            return;
+        }
+        let now = Utc::now();
+        let mut newly_silent: Vec<(String, f64, f64)> = Vec::new();
+        for (id, live) in &self.sensor_liveness {
+            if live.silence_mutation_id.is_some() || live.batch_count < MIN_BATCHES_FOR_BASELINE {
+                continue;
+            }
+            let silence = (now - live.last_seen).num_seconds().max(0) as f64;
+            let threshold =
+                (SILENCE_INTERVAL_MULTIPLIER * live.ewma_interval_secs).max(SILENCE_FLOOR_SECS);
+            if silence > threshold {
+                newly_silent.push((id.clone(), silence, live.ewma_interval_secs));
+            }
+        }
+
+        for (id, silence, interval) in newly_silent {
+            let mut mutation = Mutation::new(id.clone());
+            mutation.risk_score = 0.75;
+            mutation.innate_score = 0.75;
+            mutation.dimensions = vec![MutationDimension::Temporal];
+            mutation.details.push(MutationDetail {
+                dimension: MutationDimension::Temporal,
+                description: format!("Le sensor {id} ne rapporte plus (agent injoignable)"),
+                expected_value: format!("rapport ~toutes les {interval:.0}s"),
+                observed_value: format!("silence depuis {silence:.0}s"),
+                deviation_sigma: 4.0,
+            });
+            let mutation_id = mutation.id;
+            tracing::warn!(sensor = %id, silence_secs = silence, "sensor silenced");
+            self.push_mutation(mutation);
+            if let Some(live) = self.sensor_liveness.get_mut(&id) {
+                live.silence_mutation_id = Some(mutation_id);
+            }
+        }
+    }
+
+    /// Sensor ids currently flagged as silent (agent unreachable).
+    pub fn silenced_sensors(&self) -> Vec<String> {
+        self.sensor_liveness
+            .iter()
+            .filter(|(_, l)| l.silence_mutation_id.is_some())
+            .map(|(id, _)| id.clone())
+            .collect()
     }
 
     /// Stateful innate detectors that don't depend on the machine profile.
@@ -799,5 +912,65 @@ mod tests {
         // limit is honoured
         assert_eq!(s.all_mutations(1).len(), 1);
         assert_eq!(s.all_mutations(1)[0].machine_id, "m2");
+    }
+
+    #[test]
+    fn silenced_sensor_raises_mutation_then_resolves_on_recovery() {
+        use chrono::Duration;
+        let mut s = temp_state();
+        s.activate();
+
+        // Build a reporting baseline for an agent.
+        for _ in 0..MIN_BATCHES_FOR_BASELINE {
+            s.ingest_batch(&EventBatch::new("host-a".into()));
+        }
+        // No silence yet: the sensor just reported.
+        s.check_sensor_liveness();
+        assert!(s.silenced_sensors().is_empty());
+
+        // Simulate a long gap by backdating last_seen well past the floor.
+        let live = s.sensor_liveness.get_mut("host-a").unwrap();
+        live.ewma_interval_secs = 30.0;
+        live.last_seen = Utc::now() - Duration::seconds(600);
+
+        s.check_sensor_liveness();
+        assert_eq!(s.silenced_sensors(), vec!["host-a".to_string()]);
+        assert!(
+            s.active_mutations().iter().any(|m| m.machine_id == "host-a"
+                && m.details
+                    .iter()
+                    .any(|d| d.description.contains("ne rapporte plus"))),
+            "a silenced sensor should produce an active mutation"
+        );
+
+        // A second sweep must not duplicate the mutation.
+        let before = s.mutations.len();
+        s.check_sensor_liveness();
+        assert_eq!(s.mutations.len(), before);
+
+        // The sensor reports again: silence clears and the mutation resolves.
+        s.ingest_batch(&EventBatch::new("host-a".into()));
+        assert!(s.silenced_sensors().is_empty());
+        assert!(
+            s.mutations
+                .iter()
+                .any(|m| m.machine_id == "host-a" && m.status == MutationStatus::Resolved),
+            "recovery should resolve the silence mutation"
+        );
+    }
+
+    #[test]
+    fn silence_not_flagged_during_thymus_phase() {
+        use chrono::Duration;
+        let mut s = temp_state(); // stays in Phase::Thymus
+        for _ in 0..MIN_BATCHES_FOR_BASELINE {
+            s.ingest_batch(&EventBatch::new("host-a".into()));
+        }
+        let live = s.sensor_liveness.get_mut("host-a").unwrap();
+        live.ewma_interval_secs = 30.0;
+        live.last_seen = Utc::now() - Duration::seconds(600);
+
+        s.check_sensor_liveness();
+        assert!(s.silenced_sensors().is_empty());
     }
 }

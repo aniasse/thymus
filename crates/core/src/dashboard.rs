@@ -235,6 +235,7 @@ struct MachineRow {
     daily_volume: String,
     observation_days: u32,
     is_passive: bool,
+    is_offline: bool,
     kind: String,
     peers: Vec<PeerRow>,
 }
@@ -259,6 +260,7 @@ struct MachinesListPartial {
 )]
 async fn partial_machines_list(State(state): State<CoreState>) -> Html<String> {
     let s = state.app.read().await;
+    let silenced: std::collections::HashSet<String> = s.silenced_sensors().into_iter().collect();
     let machines: Vec<MachineRow> = s
         .profiles
         .values()
@@ -303,6 +305,7 @@ async fn partial_machines_list(State(state): State<CoreState>) -> Html<String> {
                 daily_volume,
                 observation_days: p.observation_days,
                 is_passive: p.discovery == thymus_common::Discovery::Passive,
+                is_offline: silenced.contains(&p.machine_id),
                 kind: p.device_kind().to_string(),
                 peers,
             }

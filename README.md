@@ -27,6 +27,7 @@ crates/
 - **Immunité innée** : règles universelles actives dès l'installation
 - **Immunité adaptative** : règles spécifiques développées par l'apprentissage
 - **Mémoire immunitaire** : chaque incident résolu accélère la réponse future
+- **Sensor silencieux** : un agent qui cesse de rapporter après avoir appris sa cadence est lui-même une mutation (un attaquant qui tue l'agent rend l'hôte aveugle)
 
 ## Démarrage rapide
 
