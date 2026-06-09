@@ -11,6 +11,7 @@ pub struct Snapshot {
     pub mutations_active: usize,
     pub mutations_total: usize,
     pub chains_active: usize,
+    pub sensors_silenced: usize,
 }
 
 impl Snapshot {
@@ -22,6 +23,7 @@ impl Snapshot {
             mutations_active: s.active_mutations().len(),
             mutations_total: s.mutations.len(),
             chains_active: s.active_chains().len(),
+            sensors_silenced: s.silenced_sensors().len(),
         }
     }
 }
@@ -67,6 +69,12 @@ pub fn render(snap: &Snapshot) -> String {
         snap.chains_active.to_string(),
     );
     metric(
+        "thymus_sensors_silenced",
+        "Agent sensors currently unreachable (silenced)",
+        "gauge",
+        snap.sensors_silenced.to_string(),
+    );
+    metric(
         "thymus_phase",
         "Detection phase (0=thymus, 1=active)",
         "gauge",
@@ -89,6 +97,7 @@ mod tests {
             mutations_active: 3,
             mutations_total: 47,
             chains_active: 1,
+            sensors_silenced: 2,
         };
         let out = render(&snap);
 
@@ -99,6 +108,7 @@ mod tests {
         assert!(out.contains("thymus_mutations_active 3"));
         assert!(out.contains("thymus_mutations_total 47"));
         assert!(out.contains("thymus_chains_active 1"));
+        assert!(out.contains("thymus_sensors_silenced 2"));
         // phase active renders as 1
         assert!(out.contains("thymus_phase 1"));
     }
@@ -112,6 +122,7 @@ mod tests {
             mutations_active: 0,
             mutations_total: 0,
             chains_active: 0,
+            sensors_silenced: 0,
         };
         assert!(render(&snap).contains("thymus_phase 0"));
     }

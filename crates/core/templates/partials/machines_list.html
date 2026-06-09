@@ -13,6 +13,9 @@
             {% else %}
             <span class="badge badge-blue" title="Agent installé">agent</span>
             {% endif %}
+            {% if m.is_offline %}
+            <span class="badge badge-red" title="Le sensor ne rapporte plus — agent injoignable">hors ligne</span>
+            {% endif %}
             <span class="badge" style="background: rgba(148,163,184,0.15); color: #94a3b8;">{{ m.kind }}</span>
             <span class="text-muted text-sm" style="margin-left: 0.5rem;">{{ m.peer_count }} peers</span>
         </div>

@@ -65,6 +65,16 @@ async fn main() -> Result<()> {
         }
     });
 
+    // Sensor liveness: flag agents that have gone silent (killed/unreachable)
+    let liveness_state = app_state.clone();
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(30));
+        loop {
+            interval.tick().await;
+            liveness_state.write().await.check_sensor_liveness();
+        }
+    });
+
     // Clonal selection: optimize memory cells periodically
     let clonal_state = app_state.clone();
     tokio::spawn(async move {
