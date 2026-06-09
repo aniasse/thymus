@@ -131,6 +131,3 @@ Envoie un POST JSON à chaque mutation ou chaîne latérale dépassant le score 
 | `/api/login` | POST | Obtenir une session (si token configuré) |
 | `/metrics` | GET | Métriques au format Prometheus (soumis au token) |
 
-## Licence
-
-AGPL-3.0
