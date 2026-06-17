@@ -310,6 +310,9 @@ chargement). À spécifier dans un RFC dédié une fois l'étage 2 stabilisé.
 
 RFC relu pour la cohérence sandbox/signature et la surface ABI exposée aux plugins.
 
+Point ajouté en relecture : prévoir un budget mémoire/CPU **par plugin** (et pas seulement
+global), pour qu'un plugin lent ne pénalise pas les autres détecteurs dans le même batch.
+
 ---
 
 *RFC de conception — aucun engagement d'implémentation tant qu'elle n'est pas approuvée.*
