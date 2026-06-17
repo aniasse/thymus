@@ -302,6 +302,13 @@ chargement). À spécifier dans un RFC dédié une fois l'étage 2 stabilisé.
 - Faut-il un cache de compilation (`Module::serialize`) sur disque pour accélérer le
   démarrage avec beaucoup de plugins ?
 - Politique exacte de « dégradation » (combien de traps avant désactivation, fenêtre).
+- Faut-il versionner l'ABI host (`thymus:detector`) dès la v1 pour permettre des plugins
+  compilés contre une version antérieure du Core ? (Proposition : champ `abi_version` dans
+  le manifeste, refus au chargement si incompatible.)
+
+## 14. Relecture
+
+RFC relu pour la cohérence sandbox/signature et la surface ABI exposée aux plugins.
 
 ---
 
